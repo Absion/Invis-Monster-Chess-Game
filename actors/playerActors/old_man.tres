@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ActorData" format=3]
+
+[ext_resource type="Script" uid="uid://cir5uuibgimxx" path="res://actors/actor_data.gd" id="1_xxx"]
+
+[resource]
+script = ExtResource("1_xxx")
+name = "Old Man"
+max_health = 20
+damage = 5
+movement_range = 4
