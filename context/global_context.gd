@@ -11,15 +11,18 @@ class_name GlobalContext
 var current_level: int = 1
 var music_volume: float = 1.0
 
+## Instantiates Global Services and adds them as children to this Context.
 func build_services() -> void:
 	# E.g., register_service(SaveManager.new())
 	# register_service(AudioManager.new())
 	pass
 
+## Injects dependencies into the built Global Services.
 func bind_services() -> void:
 	# Inject dependencies between global services if needed
 	pass
 
+## Initializes the Global Services now that dependencies are resolved.
 func setup() -> void:
 	# Initialize global logic
 	pass

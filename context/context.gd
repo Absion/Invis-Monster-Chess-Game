@@ -11,6 +11,7 @@ class_name Context
 ## Array to hold all managed services by this context.
 var services: Array[Node] = []
 
+## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	build_services()
 	bind_services()

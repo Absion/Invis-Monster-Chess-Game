@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ActorData" format=3]
+[gd_resource type="Resource" script_class="ActorData" format=3 uid="uid://dmcjkvuq6o3df"]
 
 [ext_resource type="Script" uid="uid://cir5uuibgimxx" path="res://actors/actor_data.gd" id="1_xxx"]
 

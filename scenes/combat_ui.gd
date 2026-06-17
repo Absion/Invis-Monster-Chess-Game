@@ -14,9 +14,11 @@ class_name CombatUI
 var turn_manager: TurnManager
 var grid_manager: GridManager
 
+## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_setup_ui()
 
+## Sets up the UI layout and elements programmatically.
 func _setup_ui() -> void:
 	# Add Turn Label
 	turn_label.text = "Turn: Unknown"
@@ -53,11 +55,13 @@ func _setup_ui() -> void:
 	hp_label.add_theme_color_override("font_color", Color.WHITE)
 	hp_panel.add_child(hp_label)
 
+## Injects the TurnManager and GridManager into the UI, connecting signals.
 func setup(turn_mgr: TurnManager, grid: GridManager) -> void:
 	turn_manager = turn_mgr
 	grid_manager = grid
 	turn_manager.turn_started.connect(_on_turn_started)
 
+## Called every frame to update the health status display dynamically.
 func _process(delta: float) -> void:
 	if not grid_manager: return
 	
@@ -78,6 +82,7 @@ func _process(delta: float) -> void:
 		"Monster 1: " + m1_hp + "\n" + \
 		"Monster 2: " + m2_hp
 
+## Callback triggered when the TurnManager changes phases. Updates the turn label.
 func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 	turn_label.text = "Turn: " + turn_manager.get_phase_name(phase)
 	
@@ -86,6 +91,7 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 	else:
 		end_turn_button.show()
 
+## Callback triggered when the 'End Turn' button is clicked.
 func _on_end_turn_pressed() -> void:
 	if turn_manager.current_phase != TurnManager.TurnPhase.MONSTERS:
 		turn_manager.end_turn()

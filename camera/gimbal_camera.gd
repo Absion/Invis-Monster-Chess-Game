@@ -37,8 +37,8 @@ func _ready() -> void:
 		pan_acceleration_curve.add_point(Vector2(0.5, 1.0)) # Reach max speed at 0.5 seconds
 		
 	_setup_camera_hierarchy()
-	# Center the camera on the 8x8 grid (which spans 0 to 14, so center is 7.0)
-	global_position = Vector3(7.0, 0.0, 7.0)
+	# Center the camera on the 10x10 grid (which spans 0 to 18, so center is 9.0)
+	global_position = Vector3(9.0, 0.0, 9.0)
 
 ## Programmatically creates the Inner Gimbal and Orthogonal Camera
 ## to prevent the need for manual scene tree setup.

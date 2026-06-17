@@ -284,6 +284,9 @@ func _spawn_test_actors() -> void:
 			fallback_attempts += 1
 		grid_manager.place_actor(monster2, pos2.x, pos2.y)
 
+## Calculates a random, unoccupied grid coordinate that is at least `min_dist`
+## Manhattan distance away from the specified `girl_x` and `girl_z` coordinates.
+## Returns a default corner coordinate if no valid spots are available.
 func _get_random_spawn(girl_x: int, girl_z: int, min_dist: int) -> Vector2i:
 	var valid_positions: Array[Vector2i] = []
 	for x in range(GridManager.GRID_SIZE_X):
@@ -349,6 +352,8 @@ func _on_actor_died(actor: Actor) -> void:
 	if active_actor and active_actor != actor and active_actor.get_actor_name() == "Old Man":
 		grid_manager.highlight_attack_range(active_actor)
 
+## Stops all turns, blocks player input, and displays the Game Over / You Win
+## UI overlay before automatically reloading the scene after a short delay.
 func _end_game(is_win: bool) -> void:
 	is_acting = true # Block player input
 	turn_manager.process_mode = Node.PROCESS_MODE_DISABLED # Pause turns

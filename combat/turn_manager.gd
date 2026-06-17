@@ -33,6 +33,9 @@ func _start_current_phase() -> void:
 
 ## Ends the active phase and cycles to the next one in the order.
 func end_turn() -> void:
+	if process_mode == Node.PROCESS_MODE_DISABLED:
+		return
+		
 	print("Turn ended: ", get_phase_name(current_phase))
 	
 	# Cycle the enum state

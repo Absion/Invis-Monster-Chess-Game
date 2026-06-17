@@ -4,6 +4,7 @@ class_name GirlAIController
 var grid_manager: GridManager
 var turn_manager: TurnManager
 
+## Injects necessary services and connects to the TurnManager.
 func setup(grid: GridManager, turn: TurnManager) -> void:
 	grid_manager = grid
 	turn_manager = turn

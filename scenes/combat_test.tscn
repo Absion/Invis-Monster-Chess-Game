@@ -1,20 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://crlsa7qtvnuui"]
 
 [ext_resource type="Script" uid="uid://bq7g46dn1owps" path="res://context/combat_context.gd" id="1_combat"]
 [ext_resource type="Script" uid="uid://c3dxob7alx0dt" path="res://camera/gimbal_camera.gd" id="2_camera"]
 [ext_resource type="Resource" path="res://actors/playerActors/old_man.tres" id="3_oldman"]
-[ext_resource type="Resource" path="res://actors/playerActors/girl.tres" id="4_girl"]
-[ext_resource type="Resource" path="res://actors/monsters/monster.tres" id="5_monster"]
+[ext_resource type="Resource" uid="uid://bu8uexh6r2en7" path="res://actors/playerActors/girl.tres" id="4_girl"]
+[ext_resource type="Resource" uid="uid://dmcjkvuq6o3df" path="res://actors/monsters/monster.tres" id="5_monster"]
 
-[node name="CombatContext" type="Node3D"]
+[node name="CombatContext" type="Node3D" unique_id=1861534326]
 script = ExtResource("1_combat")
 old_man_data = ExtResource("3_oldman")
 girl_data = ExtResource("4_girl")
 monster_data = ExtResource("5_monster")
 
-[node name="GimbalCamera" type="Node3D" parent="."]
+[node name="GimbalCamera" type="Node3D" parent="." unique_id=684898772]
 script = ExtResource("2_camera")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1863589352]
 transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 10, 0)
 shadow_enabled = true

@@ -7,8 +7,8 @@ class_name GridManager
 ## tracks actors on the grid, and calculates movement using [AStarGrid2D].
 
 ## The total number of columns on the grid (X-axis).
-const GRID_SIZE_X: int = 8
-const GRID_SIZE_Z: int = 8
+const GRID_SIZE_X: int = 10
+const GRID_SIZE_Z: int = 10
 ## The physical size in Godot world units of a single grid cell.
 const CELL_SIZE: float = 2.0
 
