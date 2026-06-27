@@ -202,6 +202,19 @@ func highlight_attack_range(actor: Actor) -> void:
 	var range_limit = actor.get_movement_range() + 1
 	var start = Vector2i(actor.grid_x, actor.grid_z)
 	
+	# Temporarily clear all monster obstacles for batched pathfinding
+	var monster_positions: Array[Vector2i] = []
+	for pos in grid.keys():
+		var grid_actor = grid[pos]
+		if grid_actor and "Monster" in grid_actor.name:
+			if astar.is_point_solid(pos):
+				astar.set_point_solid(pos, false)
+				monster_positions.append(pos)
+
+	var start_was_solid = astar.is_point_solid(start)
+	if start_was_solid:
+		astar.set_point_solid(start, false)
+
 	# Loop through a square area around the actor
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
@@ -214,11 +227,24 @@ func highlight_attack_range(actor: Actor) -> void:
 			if target_actor and target_actor.get_actor_name() == "Little Girl":
 				continue # Don't highlight friendly squares
 				
-			var path = get_naive_path(start.x, start.y, end.x, end.y)
+			var end_was_solid = astar.is_point_solid(end)
+			if end_was_solid:
+				astar.set_point_solid(end, false)
+
+			var path = astar.get_id_path(start, end)
+
+			if end_was_solid:
+				astar.set_point_solid(end, true)
 			
 			# If a valid path exists and it's within the actor's range
 			if not path.is_empty() and path.size() - 1 <= range_limit:
 				_set_cell_highlight(x, z, Color(0.8, 0.2, 0.2, 1.0)) # Red for attack
+
+	# Restore start and monster obstacles
+	if start_was_solid:
+		astar.set_point_solid(start, true)
+	for pos in monster_positions:
+		astar.set_point_solid(pos, true)
 
 ## Resets all floor tiles back to their default checkerboard pattern.
 func clear_highlights() -> void:
