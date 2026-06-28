@@ -202,6 +202,7 @@ func highlight_attack_range(actor: Actor) -> void:
 	var range_limit = actor.get_movement_range() + 1
 	var start = Vector2i(actor.grid_x, actor.grid_z)
 	
+	# Temporarily clear all monster obstacles for batched pathfinding
 	# ⚡ Bolt Optimization: Extract monster obstacle clearing outside the loop
 	# Temporarily clear all monster obstacles once, instead of doing it inside get_naive_path for every cell
 	var monster_positions: Array[Vector2i] = []
@@ -211,6 +212,10 @@ func highlight_attack_range(actor: Actor) -> void:
 			if astar.is_point_solid(pos):
 				astar.set_point_solid(pos, false)
 				monster_positions.append(pos)
+
+	var start_was_solid = astar.is_point_solid(start)
+	if start_was_solid:
+		astar.set_point_solid(start, false)
 
 	# Loop through a square area around the actor
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
@@ -224,6 +229,14 @@ func highlight_attack_range(actor: Actor) -> void:
 			if target_actor and target_actor.get_actor_name() == "Little Girl":
 				continue # Don't highlight friendly squares
 				
+			var end_was_solid = astar.is_point_solid(end)
+			if end_was_solid:
+				astar.set_point_solid(end, false)
+
+			var path = astar.get_id_path(start, end)
+
+			if end_was_solid:
+				astar.set_point_solid(end, true)
 			# Use get_grid_path directly since monster obstacles are already cleared
 			var path = get_grid_path(start.x, start.y, end.x, end.y)
 			
@@ -231,6 +244,9 @@ func highlight_attack_range(actor: Actor) -> void:
 			if not path.is_empty() and path.size() - 1 <= range_limit:
 				_set_cell_highlight(x, z, Color(0.8, 0.2, 0.2, 1.0)) # Red for attack
 
+	# Restore start and monster obstacles
+	if start_was_solid:
+		astar.set_point_solid(start, true)
 	# Restore monster obstacles
 	for pos in monster_positions:
 		astar.set_point_solid(pos, true)
