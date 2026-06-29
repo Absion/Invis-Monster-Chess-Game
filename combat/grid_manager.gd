@@ -233,12 +233,11 @@ func highlight_attack_range(actor: Actor) -> void:
 			if end_was_solid:
 				astar.set_point_solid(end, false)
 
+			# ⚡ Bolt Optimization: Removed duplicate pathfinding call get_grid_path
 			var path = astar.get_id_path(start, end)
 
 			if end_was_solid:
 				astar.set_point_solid(end, true)
-			# Use get_grid_path directly since monster obstacles are already cleared
-			var path = get_grid_path(start.x, start.y, end.x, end.y)
 			
 			# If a valid path exists and it's within the actor's range
 			if not path.is_empty() and path.size() - 1 <= range_limit:

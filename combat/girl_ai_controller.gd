@@ -52,6 +52,12 @@ func _process_girl_turn() -> void:
 	var range_limit = girl.get_movement_range()
 	var start = Vector2i(girl.grid_x, girl.grid_z)
 	
+	# ⚡ Bolt Optimization: Extract start cell clearing outside the nested loops
+	# Avoid redundant AStar state mutations (O(R^2)) for the same start position
+	var start_was_solid = grid_manager.astar.is_point_solid(start)
+	if start_was_solid:
+		grid_manager.astar.set_point_solid(start, false)
+
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
 			# Exclude out-of-bounds tiles immediately
@@ -63,7 +69,9 @@ func _process_girl_turn() -> void:
 			if not grid_manager.is_cell_walkable(x, z) and end != start:
 				continue
 				
-			var path = grid_manager.get_grid_path(start.x, start.y, end.x, end.y)
+			# ⚡ Bolt Optimization: Use get_id_path directly instead of get_grid_path
+			# We already know 'end' is not solid because of is_cell_walkable, and 'start' is cleared
+			var path = grid_manager.astar.get_id_path(start, end)
 			
 			# Only consider this tile if it's reachable within our movement limit
 			if not path.is_empty() and path.size() - 1 <= range_limit:
@@ -78,6 +86,10 @@ func _process_girl_turn() -> void:
 					max_distance_score = min_dist_to_monster
 					best_move = end
 					
+	# Restore start solid state
+	if start_was_solid:
+		grid_manager.astar.set_point_solid(start, true)
+
 	# Execute the movement to the safest tile found
 	if best_move != start:
 		await grid_manager.move_actor(girl, best_move.x, best_move.y)
