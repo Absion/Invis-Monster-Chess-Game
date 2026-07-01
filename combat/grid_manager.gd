@@ -85,8 +85,8 @@ func place_actor(actor: Actor, x: int, z: int, instant: bool = true) -> bool:
 	if instant:
 		actor.global_position = get_world_position(x, z)
 		
-	# Refresh pathfinding so AI knows this cell is now blocked
-	update_obstacles()
+	# ⚡ Bolt Optimization: Use O(1) incremental AStar update instead of O(N) full grid rebuild
+	astar.set_point_solid(pos, true)
 	return true
 
 ## Removes an actor from the grid. Used primarily when an actor dies.
@@ -94,7 +94,8 @@ func remove_actor(actor: Actor) -> void:
 	var pos = Vector2i(actor.grid_x, actor.grid_z)
 	if grid.has(pos) and grid[pos] == actor:
 		grid.erase(pos)
-		update_obstacles()
+		# ⚡ Bolt Optimization: Use O(1) incremental AStar update instead of O(N) full grid rebuild
+		astar.set_point_solid(pos, false)
 
 ## Attempts to move an actor from its current cell to a new cell.
 ## This is an asynchronous coroutine. You should `await` it so the game logic pauses while the actor slides.
@@ -112,7 +113,10 @@ func move_actor(actor: Actor, to_x: int, to_z: int) -> bool:
 		return false
 		
 	# 1. Remove from old logical position
-	grid.erase(Vector2i(actor.grid_x, actor.grid_z))
+	var old_pos = Vector2i(actor.grid_x, actor.grid_z)
+	grid.erase(old_pos)
+	# ⚡ Bolt Optimization: Clear the old obstacle immediately so place_actor works cleanly
+	astar.set_point_solid(old_pos, false)
 	
 	# 2. Place in new logical position without snapping the visual model
 	var placement_successful = place_actor(actor, to_x, to_z, false)
