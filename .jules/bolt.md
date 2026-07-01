@@ -14,3 +14,6 @@
 ## 2026-06-27 - AStar Grid Rebuild on Actor Movement
 **Learning:** Rebuilding the entire AStar grid's solid region by iterating over all actors (`astar.fill_solid_region` and subsequent `set_point_solid` in a loop) during every actor placement or movement creates an unnecessary $O(N)$ overhead. Godot's AStar allows incremental, specific point updates.
 **Action:** Use O(1) incremental updates like `astar.set_point_solid(pos, true/false)` when placing or removing actors instead of recalculating the entire grid of obstacles from scratch.
+## 2026-06-27 - Grid Highlight Resets & Dictionary Allocations
+**Learning:** Resetting grid highlights by iterating over the entire dictionary of visual cells ($O(Area)$) is an anti-pattern when only a small subset of cells are actually modified. Additionally, iterating over a dictionary using `.keys()` or `.values()` in Godot allocates a new Array each time, causing unnecessary garbage collection pressure in tight game loops.
+**Action:** Use an array to track exactly which cells are modified, and only iterate over that tracking array when resetting visual states ($O(Highlighted)$). Iterate directly on the dictionary (`for key in dict:`) instead of calling `.keys()` when you only need keys to prevent array allocations.

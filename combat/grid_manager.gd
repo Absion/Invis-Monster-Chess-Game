@@ -21,6 +21,9 @@ var astar: AStarGrid2D
 ## Stores the MeshInstance3Ds for the visual grid so we can alter their colors to highlight ranges.
 var visual_cells: Dictionary = {}
 
+## ⚡ Bolt Optimization: Tracks currently highlighted cells to avoid O(N) visual resets
+var _highlighted_cells: Array[Vector2i] = []
+
 ## Initializes the pathfinding system. Should be called after the node enters the tree.
 func setup() -> void:
 	print("GridManager initialized. Size: %dx%d" % [GRID_SIZE_X, GRID_SIZE_Z])
@@ -40,7 +43,8 @@ func _setup_astar() -> void:
 ## Clears all solid points and then iterates through the [member grid] dictionary to mark occupied cells.
 func update_obstacles() -> void:
 	astar.fill_solid_region(astar.region, false) # Clear all obstacles
-	for pos in grid.keys():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
 		astar.set_point_solid(pos, true) # Mark cells with actors as solid
 
 ## Checks if the logical coordinates are within the defined grid size.
@@ -156,7 +160,8 @@ func get_naive_path(start_x: int, start_z: int, end_x: int, end_z: int) -> Array
 	
 	# Temporarily clear all monster obstacles
 	var monster_positions: Array[Vector2i] = []
-	for pos in grid.keys():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
 		var actor = grid[pos]
 		if actor and "Monster" in actor.name:
 			if astar.is_point_solid(pos):
@@ -210,7 +215,8 @@ func highlight_attack_range(actor: Actor) -> void:
 	# ⚡ Bolt Optimization: Extract monster obstacle clearing outside the loop
 	# Temporarily clear all monster obstacles once, instead of doing it inside get_naive_path for every cell
 	var monster_positions: Array[Vector2i] = []
-	for pos in grid.keys():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
 		var grid_actor = grid[pos]
 		if grid_actor and "Monster" in grid_actor.name:
 			if astar.is_point_solid(pos):
@@ -256,13 +262,16 @@ func highlight_attack_range(actor: Actor) -> void:
 
 ## Resets all floor tiles back to their default checkerboard pattern.
 func clear_highlights() -> void:
-	for pos in visual_cells.keys():
-		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		if (pos.x + pos.y) % 2 == 0:
-			mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
-		else:
-			mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+	# ⚡ Bolt Optimization: Only reset cells that were actually highlighted
+	for pos in _highlighted_cells:
+		if visual_cells.has(pos):
+			var mesh = visual_cells[pos] as MeshInstance3D
+			var mat = mesh.material_override as StandardMaterial3D
+			if (pos.x + pos.y) % 2 == 0:
+				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
+			else:
+				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
 func _set_cell_highlight(x: int, z: int, color: Color) -> void:
@@ -271,3 +280,6 @@ func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 		var mesh = visual_cells[pos] as MeshInstance3D
 		var mat = mesh.material_override as StandardMaterial3D
 		mat.albedo_color = color
+		# ⚡ Bolt Optimization: Track this cell for targeted reset later
+		if not _highlighted_cells.has(pos):
+			_highlighted_cells.append(pos)
