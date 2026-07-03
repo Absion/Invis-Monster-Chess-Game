@@ -17,3 +17,6 @@
 ## 2026-06-27 - Grid Highlight Resets & Dictionary Allocations
 **Learning:** Resetting grid highlights by iterating over the entire dictionary of visual cells ($O(Area)$) is an anti-pattern when only a small subset of cells are actually modified. Additionally, iterating over a dictionary using `.keys()` or `.values()` in Godot allocates a new Array each time, causing unnecessary garbage collection pressure in tight game loops.
 **Action:** Use an array to track exactly which cells are modified, and only iterate over that tracking array when resetting visual states ($O(Highlighted)$). Iterate directly on the dictionary (`for key in dict:`) instead of calling `.keys()` when you only need keys to prevent array allocations.
+## 2026-06-27 - Avoid Dictionary .values() in GDScript
+**Learning:** Just like `.keys()`, calling `.values()` on a dictionary in Godot's GDScript allocates a brand new Array. Calling this within frequently executed code (like `_process` or AI loop checks) creates unnecessary garbage collection pressure and CPU overhead.
+**Action:** When you only need to iterate through dictionary values, iterate directly over the dictionary to get its keys (`for key in my_dict:`), and access the value using the key (`var value = my_dict[key]`). This executes with O(N) iteration but O(1) allocation.
