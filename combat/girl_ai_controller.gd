@@ -27,7 +27,9 @@ func _process_girl_turn() -> void:
 	var girl: Actor = null
 	var monsters: Array[Actor] = []
 	
-	for actor in grid_manager.grid.values():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
+	for key in grid_manager.grid:
+		var actor = grid_manager.grid[key]
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:
