@@ -14,6 +14,14 @@ class_name CombatUI
 var turn_manager: TurnManager
 var grid_manager: GridManager
 
+# Cached state to prevent unnecessary string allocation and UI updates in _process
+var _last_girl_hp: int = -1
+var _last_m1_hp: int = -1
+var _last_m2_hp: int = -1
+var _last_girl_max_hp: int = -1
+var _last_m1_max_hp: int = -1
+var _last_m2_max_hp: int = -1
+
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_setup_ui()
@@ -65,24 +73,43 @@ func setup(turn_mgr: TurnManager, grid: GridManager) -> void:
 func _process(delta: float) -> void:
 	if not grid_manager: return
 	
-	var girl_hp = "Dead"
-	var m1_hp = "Dead"
-	var m2_hp = "Dead"
+	var current_girl_hp: int = 0
+	var current_m1_hp: int = 0
+	var current_m2_hp: int = 0
+
+	var current_girl_max_hp: int = 0
+	var current_m1_max_hp: int = 0
+	var current_m2_max_hp: int = 0
 	
 	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
 	for pos in grid_manager.grid:
 		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
-			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
+			current_girl_hp = actor.current_health
+			current_girl_max_hp = actor.data.max_health
 		elif actor.name == "Monster1":
-			m1_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
+			current_m1_hp = actor.current_health
+			current_m1_max_hp = actor.data.max_health
 		elif actor.name == "Monster2":
-			m2_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
+			current_m2_hp = actor.current_health
+			current_m2_max_hp = actor.data.max_health
 			
-	hp_label.text = "Health Status\n------------------\n" + \
-		"Little Girl: " + girl_hp + "\n" + \
-		"Monster 1: " + m1_hp + "\n" + \
-		"Monster 2: " + m2_hp
+	# ⚡ Bolt Optimization: Only reconstruct strings and update the label if the underlying health values actually changed
+	if current_girl_hp != _last_girl_hp or current_m1_hp != _last_m1_hp or current_m2_hp != _last_m2_hp or \
+	   current_girl_max_hp != _last_girl_max_hp or current_m1_max_hp != _last_m1_max_hp or current_m2_max_hp != _last_m2_max_hp:
+
+		_last_girl_hp = current_girl_hp
+		_last_m1_hp = current_m1_hp
+		_last_m2_hp = current_m2_hp
+		_last_girl_max_hp = current_girl_max_hp
+		_last_m1_max_hp = current_m1_max_hp
+		_last_m2_max_hp = current_m2_max_hp
+
+		var girl_hp_str = "Dead" if current_girl_hp <= 0 else "%d/%d" % [current_girl_hp, current_girl_max_hp]
+		var m1_hp_str = "Dead" if current_m1_hp <= 0 else "%d/%d" % [current_m1_hp, current_m1_max_hp]
+		var m2_hp_str = "Dead" if current_m2_hp <= 0 else "%d/%d" % [current_m2_hp, current_m2_max_hp]
+
+		hp_label.text = "Health Status\n------------------\nLittle Girl: %s\nMonster 1: %s\nMonster 2: %s" % [girl_hp_str, m1_hp_str, m2_hp_str]
 
 ## Callback triggered when the TurnManager changes phases. Updates the turn label.
 func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
