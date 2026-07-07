@@ -208,6 +208,35 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 
 		print("HIT! The Old Man struck a monster!")
 		target.take_damage(actor.data.damage)
+		
+		# Reveal the monster temporarily so the player can see it get knocked back
+		if is_instance_valid(target) and is_instance_valid(target.model):
+			target.model.visible = true
+			var t = target.create_tween()
+			t.tween_interval(0.5)
+			t.tween_callback(func(): target.model.visible = false)
+		
+		# Knockback logic (if it survived)
+		if is_instance_valid(target) and target.current_health > 0:
+			var girl = _find_actor_by_name("Little Girl")
+			if girl:
+				var mx = target.grid_x
+				var mz = target.grid_z
+				var gx = girl.grid_x
+				var gz = girl.grid_z
+				var current_dist = abs(mx - gx) + abs(mz - gz)
+				var candidates = []
+				for dir in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]:
+					var nx = mx + dir.x
+					var nz = mz + dir.y
+					if grid_manager.is_cell_walkable(nx, nz):
+						var new_dist = abs(nx - gx) + abs(nz - gz)
+						if new_dist > current_dist:
+							candidates.append(Vector2i(nx, nz))
+				if candidates.size() > 0:
+					var kb = candidates[randi() % candidates.size()]
+					await grid_manager.move_actor(target, kb.x, kb.y)
+					
 		hit_monsters_this_turn.append(target)
 		combo_count += 1
 		combo_timer = 1.2

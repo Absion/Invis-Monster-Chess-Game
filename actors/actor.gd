@@ -86,19 +86,35 @@ func _play_hit_feedback() -> void:
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
 	
-	var camera = get_viewport().get_camera_3d()
-	if camera and camera.get_parent() and camera.get_parent().get_parent() is GimbalCamera:
-		if get_actor_name() == "Little Girl":
-			camera.get_parent().get_parent().shake(1.5, 0.4)
-		elif "Monster" in get_actor_name() or "Monster" in name:
-			camera.get_parent().get_parent().shake(0.75, 0.4)
+	if is_instance_valid(model):
+		var intensity = 0.3 if get_actor_name() == "Little Girl" else 0.15
+		var shake_tween = create_tween()
+		var original_y = model.position.y
+		for i in range(4):
+			var random_offset = Vector3(randf_range(-intensity, intensity), original_y, randf_range(-intensity, intensity))
+			shake_tween.tween_property(model, "position", random_offset, 0.05)
+		shake_tween.tween_property(model, "position", Vector3(0, original_y, 0), 0.05)
 
 ## Executes the death sequence, emitting the signal for managers to clean up.
 func die() -> void:
 	print(get_actor_name(), " has died!")
 	died.emit(self)
-	# Remove this node from the scene tree safely at the end of the frame
-	queue_free()
+	
+	if is_instance_valid(model):
+		var death_tween = create_tween()
+		var original_y = model.position.y
+		var intensity = 0.4 # Violent shake for death
+		
+		# 5 steps of 0.05s = 0.25s total death animation
+		for i in range(5):
+			var random_offset = Vector3(randf_range(-intensity, intensity), original_y, randf_range(-intensity, intensity))
+			death_tween.tween_property(model, "position", random_offset, 0.05)
+			# Toggle visibility each step for a glitchy flashing effect
+			death_tween.tween_callback(func(): model.visible = not model.visible)
+			
+		death_tween.tween_callback(queue_free)
+	else:
+		queue_free()
 	
 ## Helper to safely retrieve the movement range from the resource.
 func get_movement_range() -> int:
