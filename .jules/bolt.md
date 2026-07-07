@@ -20,3 +20,6 @@
 ## 2026-06-27 - Dictionary Iteration Array Allocation (.values())
 **Learning:** Calling `.values()` (or `.keys()`) on a Godot Dictionary allocates a new Array containing all the elements. When this is done repeatedly inside tight loops like `_process()` or heavily-called pathfinding and AI logic, it creates severe memory allocation overhead and triggers the garbage collector much more frequently, negatively impacting performance.
 **Action:** Replace `for value in dict.values():` with direct dictionary key iteration: `for key in dict: var value = dict[key]` to avoid array allocations entirely.
+## 2026-06-27 - UI String Reconstruction in _process Loop
+**Learning:** Reconstructing UI strings and updating UI `.text` properties continuously inside Godot's `_process()` loop (at 60 FPS) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
+**Action:** Cache primitive states (like actor names, health points, counts) for UI updates and check for changes before re-allocating strings or modifying UI `.text` properties to significantly reduce overhead.
