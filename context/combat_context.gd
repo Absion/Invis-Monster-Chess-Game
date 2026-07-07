@@ -25,6 +25,15 @@ var is_acting: bool = false
 ## Flag to enforce 1 movement action per turn.
 var has_moved_this_turn: bool = false
 
+## Combo system variables
+var combo_count: int = 0
+var combo_timer: float = 0.0
+var combo_active: bool = false
+var hit_monsters_this_turn: Array[Actor] = []
+
+## Visual mesh that hovers over valid target squares
+var hover_indicator: MeshInstance3D
+
 ## Builds and registers the child Service nodes required for Combat.
 func build_services() -> void:
 	grid_manager = GridManager.new()
@@ -66,6 +75,11 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 	active_actor = null
 	is_acting = false
 	has_moved_this_turn = false
+	combo_count = 0
+	combo_active = false
+	hit_monsters_this_turn.clear()
+	if combat_ui:
+		combat_ui.update_combo(0, 0.0)
 	grid_manager.clear_highlights()
 	
 	# 1. Determine the active player actor
@@ -74,7 +88,7 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 		
 	# 2. Toggle Monster Visibility (Invis Monster Mechanic)
 	# Monsters are ONLY visible during the Girl's turn.
-	for actor in grid_manager.grid.values():
+	for actor in grid_manager.get_all_actors():
 		if "Monster" in actor.name:
 			var should_be_visible = (phase == TurnManager.TurnPhase.GIRL)
 			# Only hide if alive
@@ -97,27 +111,14 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 
 ## Helper to locate a specific actor instance by their base name.
 func _find_actor_by_name(actor_name: String) -> Actor:
-	for actor in grid_manager.grid.values():
+	for actor in grid_manager.get_all_actors():
 		if actor.get_actor_name() == actor_name:
 			return actor
 	return null
 
 ## Godot's built-in input interceptor. We use this to detect mouse clicks on the 3D grid.
 func _unhandled_input(event: InputEvent) -> void:
-	# Only care about left-click presses
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		
-		# Block input if it's the AI's turn or a tween is currently playing
-		if turn_manager.current_phase == TurnManager.TurnPhase.MONSTERS or is_acting:
-			return 
-			
-		if active_actor == null:
-			return
-			
-		# ---- MATHEMATICAL RAYCASTING ----
-		# Instead of using Physics bodies, we use pure math to intersect the mouse
-		# with the Y=0 floor plane. This is perfectly accurate for a flat grid game.
-		
+	if event is InputEventMouseMotion or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
 		var camera = get_viewport().get_camera_3d()
 		if not camera: return
 		
@@ -125,20 +126,32 @@ func _unhandled_input(event: InputEvent) -> void:
 		var ray_origin = camera.project_ray_origin(mouse_pos)
 		var ray_normal = camera.project_ray_normal(mouse_pos)
 		
-		if ray_normal.y == 0: return # Parallel to ground, no intersection possible
-		
-		# Solve for t in: ray_origin.y + ray_normal.y * t = 0 (Ground Plane)
+		if ray_normal.y == 0: return 
 		var t = -ray_origin.y / ray_normal.y
-		if t < 0: return # The click is behind the camera
+		if t < 0: return 
 		
-		# Calculate the exact 3D world coordinate of the click
 		var intersection = ray_origin + ray_normal * t
-		
-		# Convert world physical coordinates back into logical Grid (x, z) indexes
 		var grid_x = floor(intersection.x / GridManager.CELL_SIZE)
 		var grid_z = floor(intersection.z / GridManager.CELL_SIZE)
 		
-		_handle_grid_click(grid_x, grid_z)
+		if event is InputEventMouseMotion:
+			if grid_manager.is_in_bounds(grid_x, grid_z):
+				hover_indicator.show()
+				var wpos = grid_manager.get_world_position(grid_x, grid_z)
+				wpos.y = 0.01 
+				hover_indicator.position = wpos
+				return
+			if hover_indicator: hover_indicator.hide()
+			
+		elif event is InputEventMouseButton:
+			# Block clicks if it's the AI's turn or a tween is playing
+			if turn_manager.current_phase == TurnManager.TurnPhase.MONSTERS or is_acting:
+				return 
+				
+			if active_actor == null:
+				return
+				
+			_handle_grid_click(grid_x, grid_z)
 
 ## Processes the logical intent of the player clicking on a specific grid cell.
 func _handle_grid_click(x: int, z: int) -> void:
@@ -175,10 +188,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	for step in walk_path:
 		var obstacle = grid_manager.get_actor_at(step.x, step.y)
 		if obstacle and "Monster" in obstacle.name:
-			print("STUNNED! The Old Man bumped into an invisible monster at ", step.x, ", ", step.y)
-			_show_stun_feedback(actor)
-			turn_manager.end_turn()
-			return
+			_play_ghost_blink(obstacle)
 			
 		# Safe to move
 		await grid_manager.move_actor(actor, step.x, step.y)
@@ -186,12 +196,82 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	# Arrived safely! Execute the attack on the target tile.
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	if target and "Monster" in target.name:
+		if hit_monsters_this_turn.has(target):
+			print("Already hit this monster! Red X appears.")
+			_show_wrong_target_feedback(target)
+			# Let the combo timer continue, do not end turn
+			return
+
 		print("HIT! The Old Man struck a monster!")
 		target.take_damage(actor.data.damage)
+		hit_monsters_this_turn.append(target)
+		combo_count += 1
+		combo_timer = 1.2
+		combo_active = true
+		
+		var unhit_monsters = 0
+		for a in grid_manager.get_all_actors():
+			if a and "Monster" in a.name and a.current_health > 0:
+				if not hit_monsters_this_turn.has(a):
+					unhit_monsters += 1
+					
+		if unhit_monsters == 0:
+			print("Hit all monsters! Ending turn.")
+			combo_active = false
+			turn_manager.end_turn()
+		else:
+			# Refresh highlights from his new location so he can combo again
+			grid_manager.highlight_attack_range(actor)
+		return
 	else:
 		print("SWISH! The Old Man swung at the air.")
 		
 	turn_manager.end_turn()
+
+func _process(delta: float) -> void:
+	if combo_active:
+		# Freeze the timer while animations/movements are happening
+		if not is_acting:
+			combo_timer -= delta
+			
+		if combat_ui:
+			combat_ui.update_combo(combo_count, max(0.0, combo_timer))
+		
+		if combo_timer <= 0.0:
+			if turn_manager.current_phase == TurnManager.TurnPhase.MAN and not is_acting:
+				combo_active = false
+				print("Combo time ran out!")
+				turn_manager.end_turn()
+
+func _show_wrong_target_feedback(actor: Actor) -> void:
+	var label = Label3D.new()
+	label.text = "X"
+	label.pixel_size = 0.05
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = Color.RED
+	label.outline_render_priority = 1
+	label.font_size = 150
+	
+	actor.add_child(label)
+	label.position.y = 2.5
+	
+	var tween = get_tree().create_tween()
+	tween.tween_property(label, "position:y", 3.5, 0.5)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(label.queue_free)
+
+func _play_ghost_blink(actor: Actor) -> void:
+	if not is_instance_valid(actor) or not is_instance_valid(actor.model): return
+	
+	# Bind the tween to the actor so it aborts automatically if the actor dies
+	var tween = actor.create_tween()
+	actor.model.visible = true
+	tween.tween_interval(0.15)
+	tween.tween_callback(func(): actor.model.visible = false)
+	tween.tween_interval(0.15)
+	tween.tween_callback(func(): actor.model.visible = true)
+	tween.tween_interval(0.15)
+	tween.tween_callback(func(): actor.model.visible = false)
 
 ## Spawns a floating '!' above the actor and shakes the screen.
 func _show_stun_feedback(actor: Actor) -> void:
@@ -244,6 +324,19 @@ func _draw_visual_grid() -> void:
 			cell.position = pos
 			visual_grid.add_child(cell)
 			grid_manager.register_visual_cell(x, z, cell)
+			
+	# Create hover indicator
+	hover_indicator = MeshInstance3D.new()
+	var hover_mesh = BoxMesh.new()
+	# Make it slightly smaller than the cell so it looks like an inner border/highlight
+	hover_mesh.size = Vector3(GridManager.CELL_SIZE * 0.9, 0.02, GridManager.CELL_SIZE * 0.9)
+	var hover_mat = StandardMaterial3D.new()
+	hover_mat.albedo_color = Color(1.0, 1.0, 0.5, 0.4) # Transparent bright yellow
+	hover_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	hover_indicator.mesh = hover_mesh
+	hover_indicator.material_override = hover_mat
+	hover_indicator.hide()
+	visual_grid.add_child(hover_indicator)
 
 ## Initializes the characters into the world based on the @export resources.
 func _spawn_test_actors() -> void:
@@ -283,6 +376,15 @@ func _spawn_test_actors() -> void:
 			pos2 = _get_random_spawn(pos1.x, pos1.y, 5)
 			fallback_attempts += 1
 		grid_manager.place_actor(monster2, pos2.x, pos2.y)
+		
+		var monster3 = _create_actor("Monster3", monster_data, Color.ORANGE)
+		actors_node.add_child(monster3)
+		var pos3 = _get_random_spawn(pos2.x, pos2.y, 5)
+		var fallback_attempts2 = 0
+		while abs(pos3.x - 1) + abs(pos3.y - 2) < 6 and fallback_attempts2 < 10:
+			pos3 = _get_random_spawn(pos2.x, pos2.y, 5)
+			fallback_attempts2 += 1
+		grid_manager.place_actor(monster3, pos3.x, pos3.y)
 
 ## Calculates a random, unoccupied grid coordinate that is at least `min_dist`
 ## Manhattan distance away from the specified `girl_x` and `girl_z` coordinates.
@@ -339,7 +441,7 @@ func _on_actor_died(actor: Actor) -> void:
 		return
 		
 	var monsters_alive = 0
-	for a in grid_manager.grid.values():
+	for a in grid_manager.get_all_actors():
 		if a and "Monster" in a.name:
 			monsters_alive += 1
 			

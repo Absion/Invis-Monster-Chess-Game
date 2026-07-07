@@ -30,7 +30,7 @@ func _process_monsters() -> void:
 	var monsters: Array[Actor] = []
 	var girl: Actor = null
 	
-	for actor in grid_manager.grid.values():
+	for actor in grid_manager.get_all_actors():
 		# Categorize actors into monsters array or identify the target girl
 		if "Monster" in actor.name:
 			monsters.append(actor)

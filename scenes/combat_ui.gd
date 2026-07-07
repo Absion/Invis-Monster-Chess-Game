@@ -11,6 +11,9 @@ class_name CombatUI
 @onready var hp_panel: Panel = Panel.new()
 @onready var hp_label: Label = Label.new()
 
+var combo_panel: Panel = Panel.new()
+var combo_label: Label = Label.new()
+
 var turn_manager: TurnManager
 var grid_manager: GridManager
 
@@ -40,7 +43,7 @@ func _setup_ui() -> void:
 	
 	# Add HP Panel
 	hp_panel.position = Vector2(1000, 20)
-	hp_panel.size = Vector2(250, 160)
+	hp_panel.size = Vector2(250, 190)
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.7)
 	style.corner_radius_top_left = 8
@@ -49,6 +52,24 @@ func _setup_ui() -> void:
 	style.corner_radius_bottom_right = 8
 	hp_panel.add_theme_stylebox_override("panel", style)
 	add_child(hp_panel)
+	
+	# Combo UI
+	combo_panel.position = Vector2(20, 150)
+	combo_panel.size = Vector2(200, 80)
+	var combo_style = StyleBoxFlat.new()
+	combo_style.bg_color = Color(0, 0, 0, 0.7)
+	combo_style.corner_radius_top_left = 8
+	combo_style.corner_radius_top_right = 8
+	combo_style.corner_radius_bottom_left = 8
+	combo_style.corner_radius_bottom_right = 8
+	combo_panel.add_theme_stylebox_override("panel", combo_style)
+	add_child(combo_panel)
+	combo_panel.hide()
+	
+	combo_label.position = Vector2(15, 10)
+	combo_label.add_theme_font_size_override("font_size", 20)
+	combo_label.add_theme_color_override("font_color", Color.YELLOW)
+	combo_panel.add_child(combo_label)
 	
 	hp_label.position = Vector2(15, 15)
 	hp_label.add_theme_font_size_override("font_size", 20)
@@ -62,25 +83,29 @@ func setup(turn_mgr: TurnManager, grid: GridManager) -> void:
 	turn_manager.turn_started.connect(_on_turn_started)
 
 ## Called every frame to update the health status display dynamically.
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not grid_manager: return
 	
 	var girl_hp = "Dead"
 	var m1_hp = "Dead"
 	var m2_hp = "Dead"
+	var m3_hp = "Dead"
 	
-	for actor in grid_manager.grid.values():
+	for actor in grid_manager.get_all_actors():
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name == "Monster1":
 			m1_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name == "Monster2":
 			m2_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
+		elif actor.name == "Monster3":
+			m3_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 			
 	hp_label.text = "Health Status\n------------------\n" + \
 		"Little Girl: " + girl_hp + "\n" + \
 		"Monster 1: " + m1_hp + "\n" + \
-		"Monster 2: " + m2_hp
+		"Monster 2: " + m2_hp + "\n" + \
+		"Monster 3: " + m3_hp
 
 ## Callback triggered when the TurnManager changes phases. Updates the turn label.
 func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
@@ -95,3 +120,10 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 func _on_end_turn_pressed() -> void:
 	if turn_manager.current_phase != TurnManager.TurnPhase.MONSTERS:
 		turn_manager.end_turn()
+
+func update_combo(count: int, time_left: float) -> void:
+	if count > 0:
+		combo_panel.show()
+		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
+	else:
+		combo_panel.hide()

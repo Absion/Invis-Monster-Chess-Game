@@ -27,7 +27,7 @@ func _process_girl_turn() -> void:
 	var girl: Actor = null
 	var monsters: Array[Actor] = []
 	
-	for actor in grid_manager.grid.values():
+	for actor in grid_manager.get_all_actors():
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:

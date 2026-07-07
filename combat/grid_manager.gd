@@ -7,13 +7,16 @@ class_name GridManager
 ## tracks actors on the grid, and calculates movement using [AStarGrid2D].
 
 ## The total number of columns on the grid (X-axis).
-const GRID_SIZE_X: int = 10
-const GRID_SIZE_Z: int = 10
+const GRID_SIZE_X: int = 12
+const GRID_SIZE_Z: int = 12
 ## The physical size in Godot world units of a single grid cell.
 const CELL_SIZE: float = 2.0
 
 ## Dictionary mapping logical coordinates `Vector2i(x, z)` to the `Actor` instance at that location.
 var grid: Dictionary = {}
+
+## Dictionary storing actors that have been stepped on (e.g., an invisible monster under the Old Man).
+var stacked_actors: Dictionary = {}
 
 ## The A* Pathfinding object that calculates the shortest path while avoiding obstacles.
 var astar: AStarGrid2D
@@ -59,7 +62,16 @@ func get_actor_at(x: int, z: int) -> Actor:
 	var pos = Vector2i(x, z)
 	if grid.has(pos):
 		return grid[pos]
+	if stacked_actors.has(pos):
+		return stacked_actors[pos]
 	return null
+
+## Returns all actors currently on the grid (including stacked ones).
+func get_all_actors() -> Array[Actor]:
+	var all: Array[Actor] = []
+	all.append_array(grid.values() as Array[Actor])
+	all.append_array(stacked_actors.values() as Array[Actor])
+	return all
 
 ## Places an actor precisely at the logical coordinates.
 ## If [param instant] is true (default), the actor snaps to the new world position immediately.
@@ -71,8 +83,13 @@ func place_actor(actor: Actor, x: int, z: int, instant: bool = true) -> bool:
 		
 	var pos = Vector2i(x, z)
 	if grid.has(pos):
-		push_warning("Cell already occupied at: ", x, ", ", z)
-		return false
+		var occupant = grid[pos]
+		# If the Old Man steps on a Monster, we push the Monster to the stacked layer
+		if actor.get_actor_name() == "Old Man" and occupant and "Monster" in occupant.name:
+			stacked_actors[pos] = occupant
+		else:
+			push_warning("Cell already occupied at: ", x, ", ", z)
+			return false
 		
 	# Store the actor in our dictionary
 	grid[pos] = actor
@@ -90,7 +107,13 @@ func remove_actor(actor: Actor) -> void:
 	var pos = Vector2i(actor.grid_x, actor.grid_z)
 	if grid.has(pos) and grid[pos] == actor:
 		grid.erase(pos)
+		# Restore a stacked actor if one was underneath
+		if stacked_actors.has(pos):
+			grid[pos] = stacked_actors[pos]
+			stacked_actors.erase(pos)
 		update_obstacles()
+	elif stacked_actors.has(pos) and stacked_actors[pos] == actor:
+		stacked_actors.erase(pos)
 
 ## Attempts to move an actor from its current cell to a new cell.
 ## This is an asynchronous coroutine. You should `await` it so the game logic pauses while the actor slides.
@@ -108,7 +131,15 @@ func move_actor(actor: Actor, to_x: int, to_z: int) -> bool:
 		return false
 		
 	# 1. Remove from old logical position
-	grid.erase(Vector2i(actor.grid_x, actor.grid_z))
+	var old_pos = Vector2i(actor.grid_x, actor.grid_z)
+	if grid.has(old_pos) and grid[old_pos] == actor:
+		grid.erase(old_pos)
+		# Restore any stacked actor beneath them
+		if stacked_actors.has(old_pos):
+			grid[old_pos] = stacked_actors[old_pos]
+			stacked_actors.erase(old_pos)
+	elif stacked_actors.has(old_pos) and stacked_actors[old_pos] == actor:
+		stacked_actors.erase(old_pos)
 	
 	# 2. Place in new logical position without snapping the visual model
 	var placement_successful = place_actor(actor, to_x, to_z, false)

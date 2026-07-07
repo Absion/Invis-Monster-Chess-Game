@@ -87,9 +87,11 @@ func _play_hit_feedback() -> void:
 	tween.tween_callback(label.queue_free)
 	
 	var camera = get_viewport().get_camera_3d()
-	# Safely verify the camera hierarchy to trigger a screen shake
 	if camera and camera.get_parent() and camera.get_parent().get_parent() is GimbalCamera:
-		camera.get_parent().get_parent().shake(1.5, 0.4)
+		if get_actor_name() == "Little Girl":
+			camera.get_parent().get_parent().shake(1.5, 0.4)
+		elif "Monster" in get_actor_name() or "Monster" in name:
+			camera.get_parent().get_parent().shake(0.75, 0.4)
 
 ## Executes the death sequence, emitting the signal for managers to clean up.
 func die() -> void:
