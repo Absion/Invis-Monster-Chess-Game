@@ -235,7 +235,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 							candidates.append(Vector2i(nx, nz))
 				if candidates.size() > 0:
 					var kb = candidates[randi() % candidates.size()]
-					await grid_manager.move_actor(target, kb.x, kb.y)
+					grid_manager.move_actor(target, kb.x, kb.y)
 					
 		hit_monsters_this_turn.append(target)
 		combo_count += 1
