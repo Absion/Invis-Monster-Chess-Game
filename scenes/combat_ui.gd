@@ -91,7 +91,9 @@ func _process(_delta: float) -> void:
 	var m2_hp = "Dead"
 	var m3_hp = "Dead"
 	
-	for actor in grid_manager.get_all_actors():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name == "Monster1":

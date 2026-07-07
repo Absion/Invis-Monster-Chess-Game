@@ -30,7 +30,9 @@ func _process_monsters() -> void:
 	var monsters: Array[Actor] = []
 	var girl: Actor = null
 	
-	for actor in grid_manager.get_all_actors():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		# Categorize actors into monsters array or identify the target girl
 		if "Monster" in actor.name:
 			monsters.append(actor)

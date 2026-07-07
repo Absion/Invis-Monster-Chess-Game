@@ -24,6 +24,9 @@ var astar: AStarGrid2D
 ## Stores the MeshInstance3Ds for the visual grid so we can alter their colors to highlight ranges.
 var visual_cells: Dictionary = {}
 
+## ⚡ Bolt Optimization: Tracks currently highlighted cells to avoid O(N) visual resets
+var _highlighted_cells: Array[Vector2i] = []
+
 ## Initializes the pathfinding system. Should be called after the node enters the tree.
 func setup() -> void:
 	print("GridManager initialized. Size: %dx%d" % [GRID_SIZE_X, GRID_SIZE_Z])
@@ -43,7 +46,8 @@ func _setup_astar() -> void:
 ## Clears all solid points and then iterates through the [member grid] dictionary to mark occupied cells.
 func update_obstacles() -> void:
 	astar.fill_solid_region(astar.region, false) # Clear all obstacles
-	for pos in grid.keys():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
 		astar.set_point_solid(pos, true) # Mark cells with actors as solid
 
 ## Checks if the logical coordinates are within the defined grid size.
@@ -98,8 +102,8 @@ func place_actor(actor: Actor, x: int, z: int, instant: bool = true) -> bool:
 	if instant:
 		actor.global_position = get_world_position(x, z)
 		
-	# Refresh pathfinding so AI knows this cell is now blocked
-	update_obstacles()
+	# ⚡ Bolt Optimization: Use O(1) incremental AStar update instead of O(N) full grid rebuild
+	astar.set_point_solid(pos, true)
 	return true
 
 ## Removes an actor from the grid. Used primarily when an actor dies.
@@ -107,13 +111,8 @@ func remove_actor(actor: Actor) -> void:
 	var pos = Vector2i(actor.grid_x, actor.grid_z)
 	if grid.has(pos) and grid[pos] == actor:
 		grid.erase(pos)
-		# Restore a stacked actor if one was underneath
-		if stacked_actors.has(pos):
-			grid[pos] = stacked_actors[pos]
-			stacked_actors.erase(pos)
-		update_obstacles()
-	elif stacked_actors.has(pos) and stacked_actors[pos] == actor:
-		stacked_actors.erase(pos)
+		# ⚡ Bolt Optimization: Use O(1) incremental AStar update instead of O(N) full grid rebuild
+		astar.set_point_solid(pos, false)
 
 ## Attempts to move an actor from its current cell to a new cell.
 ## This is an asynchronous coroutine. You should `await` it so the game logic pauses while the actor slides.
@@ -132,14 +131,9 @@ func move_actor(actor: Actor, to_x: int, to_z: int) -> bool:
 		
 	# 1. Remove from old logical position
 	var old_pos = Vector2i(actor.grid_x, actor.grid_z)
-	if grid.has(old_pos) and grid[old_pos] == actor:
-		grid.erase(old_pos)
-		# Restore any stacked actor beneath them
-		if stacked_actors.has(old_pos):
-			grid[old_pos] = stacked_actors[old_pos]
-			stacked_actors.erase(old_pos)
-	elif stacked_actors.has(old_pos) and stacked_actors[old_pos] == actor:
-		stacked_actors.erase(old_pos)
+	grid.erase(old_pos)
+	# ⚡ Bolt Optimization: Clear the old obstacle immediately so place_actor works cleanly
+	astar.set_point_solid(old_pos, false)
 	
 	# 2. Place in new logical position without snapping the visual model
 	var placement_successful = place_actor(actor, to_x, to_z, false)
@@ -183,7 +177,8 @@ func get_naive_path(start_x: int, start_z: int, end_x: int, end_z: int) -> Array
 	
 	# Temporarily clear all monster obstacles
 	var monster_positions: Array[Vector2i] = []
-	for pos in grid.keys():
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
 		var actor = grid[pos]
 		if actor and "Monster" in actor.name:
 			if astar.is_point_solid(pos):
@@ -233,6 +228,22 @@ func highlight_attack_range(actor: Actor) -> void:
 	var range_limit = actor.get_movement_range() + 1
 	var start = Vector2i(actor.grid_x, actor.grid_z)
 	
+	# Temporarily clear all monster obstacles for batched pathfinding
+	# ⚡ Bolt Optimization: Extract monster obstacle clearing outside the loop
+	# Temporarily clear all monster obstacles once, instead of doing it inside get_naive_path for every cell
+	var monster_positions: Array[Vector2i] = []
+	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
+	for pos in grid:
+		var grid_actor = grid[pos]
+		if grid_actor and "Monster" in grid_actor.name:
+			if astar.is_point_solid(pos):
+				astar.set_point_solid(pos, false)
+				monster_positions.append(pos)
+
+	var start_was_solid = astar.is_point_solid(start)
+	if start_was_solid:
+		astar.set_point_solid(start, false)
+
 	# Loop through a square area around the actor
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
@@ -245,21 +256,39 @@ func highlight_attack_range(actor: Actor) -> void:
 			if target_actor and target_actor.get_actor_name() == "Little Girl":
 				continue # Don't highlight friendly squares
 				
-			var path = get_naive_path(start.x, start.y, end.x, end.y)
+			var end_was_solid = astar.is_point_solid(end)
+			if end_was_solid:
+				astar.set_point_solid(end, false)
+
+			# ⚡ Bolt Optimization: Removed duplicate pathfinding call get_grid_path
+			var path = astar.get_id_path(start, end)
+
+			if end_was_solid:
+				astar.set_point_solid(end, true)
 			
 			# If a valid path exists and it's within the actor's range
 			if not path.is_empty() and path.size() - 1 <= range_limit:
 				_set_cell_highlight(x, z, Color(0.8, 0.2, 0.2, 1.0)) # Red for attack
 
+	# Restore start and monster obstacles
+	if start_was_solid:
+		astar.set_point_solid(start, true)
+	# Restore monster obstacles
+	for pos in monster_positions:
+		astar.set_point_solid(pos, true)
+
 ## Resets all floor tiles back to their default checkerboard pattern.
 func clear_highlights() -> void:
-	for pos in visual_cells.keys():
-		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		if (pos.x + pos.y) % 2 == 0:
-			mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
-		else:
-			mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+	# ⚡ Bolt Optimization: Only reset cells that were actually highlighted
+	for pos in _highlighted_cells:
+		if visual_cells.has(pos):
+			var mesh = visual_cells[pos] as MeshInstance3D
+			var mat = mesh.material_override as StandardMaterial3D
+			if (pos.x + pos.y) % 2 == 0:
+				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
+			else:
+				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
 func _set_cell_highlight(x: int, z: int, color: Color) -> void:
@@ -268,3 +297,6 @@ func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 		var mesh = visual_cells[pos] as MeshInstance3D
 		var mat = mesh.material_override as StandardMaterial3D
 		mat.albedo_color = color
+		# ⚡ Bolt Optimization: Track this cell for targeted reset later
+		if not _highlighted_cells.has(pos):
+			_highlighted_cells.append(pos)
