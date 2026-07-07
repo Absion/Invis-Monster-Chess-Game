@@ -239,7 +239,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 					
 		hit_monsters_this_turn.append(target)
 		combo_count += 1
-		combo_timer = 1.2
+		combo_timer = 2.4
 		combo_active = true
 		
 		var unhit_monsters = 0
@@ -395,29 +395,18 @@ func _spawn_test_actors() -> void:
 		grid_manager.place_actor(girl, 1, 2)
 	
 	if monster_data:
-		var monster1 = _create_actor("Monster1", monster_data, Color.RED)
-		actors_node.add_child(monster1)
-		var pos1 = _get_random_spawn(1, 2, 6)
-		grid_manager.place_actor(monster1, pos1.x, pos1.y)
-		
-		var monster2 = _create_actor("Monster2", monster_data, Color.DARK_RED)
-		actors_node.add_child(monster2)
-		var pos2 = _get_random_spawn(pos1.x, pos1.y, 5) # Second monster spawns away from the first monster
-		# Ensure it's also far from the girl
-		var fallback_attempts = 0
-		while abs(pos2.x - 1) + abs(pos2.y - 2) < 6 and fallback_attempts < 10:
-			pos2 = _get_random_spawn(pos1.x, pos1.y, 5)
-			fallback_attempts += 1
-		grid_manager.place_actor(monster2, pos2.x, pos2.y)
-		
-		var monster3 = _create_actor("Monster3", monster_data, Color.ORANGE)
-		actors_node.add_child(monster3)
-		var pos3 = _get_random_spawn(pos2.x, pos2.y, 5)
-		var fallback_attempts2 = 0
-		while abs(pos3.x - 1) + abs(pos3.y - 2) < 6 and fallback_attempts2 < 10:
-			pos3 = _get_random_spawn(pos2.x, pos2.y, 5)
-			fallback_attempts2 += 1
-		grid_manager.place_actor(monster3, pos3.x, pos3.y)
+		var colors = [Color.RED, Color.DARK_RED, Color.ORANGE, Color.YELLOW, Color.PURPLE, Color.BLUE]
+		var last_pos = Vector2i(1, 2)
+		for i in range(6):
+			var m = _create_actor("Monster" + str(i + 1), monster_data, colors[i])
+			actors_node.add_child(m)
+			var pos = _get_random_spawn(last_pos.x, last_pos.y, 5 if i > 0 else 6)
+			var fallback = 0
+			while abs(pos.x - 1) + abs(pos.y - 2) < 6 and fallback < 10:
+				pos = _get_random_spawn(last_pos.x, last_pos.y, 5 if i > 0 else 6)
+				fallback += 1
+			grid_manager.place_actor(m, pos.x, pos.y)
+			last_pos = pos
 
 ## Calculates a random, unoccupied grid coordinate that is at least `min_dist`
 ## Manhattan distance away from the specified `girl_x` and `girl_z` coordinates.

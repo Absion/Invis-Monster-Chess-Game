@@ -15,7 +15,7 @@ enum TurnPhase {
 }
 
 ## The currently active phase.
-var current_phase: TurnPhase = TurnPhase.MONSTERS
+var current_phase: TurnPhase = TurnPhase.GIRL
 
 ## Emitted whenever the turn phase changes so UI, AI, and Contexts can react.
 signal turn_started(phase: TurnPhase)
@@ -40,12 +40,12 @@ func end_turn() -> void:
 	
 	# Cycle the enum state
 	match current_phase:
-		TurnPhase.MONSTERS:
-			current_phase = TurnPhase.GIRL
 		TurnPhase.GIRL:
 			current_phase = TurnPhase.MAN
 		TurnPhase.MAN:
 			current_phase = TurnPhase.MONSTERS
+		TurnPhase.MONSTERS:
+			current_phase = TurnPhase.GIRL
 			
 	_start_current_phase()
 

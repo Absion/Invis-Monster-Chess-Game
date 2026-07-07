@@ -43,7 +43,7 @@ func _setup_ui() -> void:
 	
 	# Add HP Panel
 	hp_panel.position = Vector2(1000, 20)
-	hp_panel.size = Vector2(250, 190)
+	hp_panel.size = Vector2(250, 280)
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.7)
 	style.corner_radius_top_left = 8
@@ -71,10 +71,14 @@ func _setup_ui() -> void:
 	combo_label.add_theme_color_override("font_color", Color.YELLOW)
 	combo_panel.add_child(combo_label)
 	
-	hp_label.position = Vector2(15, 15)
+	var scroll = ScrollContainer.new()
+	scroll.position = Vector2(10, 10)
+	scroll.size = Vector2(230, 260)
+	hp_panel.add_child(scroll)
+	
 	hp_label.add_theme_font_size_override("font_size", 20)
 	hp_label.add_theme_color_override("font_color", Color.WHITE)
-	hp_panel.add_child(hp_label)
+	scroll.add_child(hp_label)
 
 ## Injects the TurnManager and GridManager into the UI, connecting signals.
 func setup(turn_mgr: TurnManager, grid: GridManager) -> void:
@@ -87,27 +91,23 @@ func _process(_delta: float) -> void:
 	if not grid_manager: return
 	
 	var girl_hp = "Dead"
-	var m1_hp = "Dead"
-	var m2_hp = "Dead"
-	var m3_hp = "Dead"
+	var monster_hps = {}
 	
 	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
 	for pos in grid_manager.grid:
 		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
-		elif actor.name == "Monster1":
-			m1_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
-		elif actor.name == "Monster2":
-			m2_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
-		elif actor.name == "Monster3":
-			m3_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
+		elif actor.name.begins_with("Monster"):
+			monster_hps[actor.name] = str(actor.current_health) + "/" + str(actor.data.max_health)
 			
-	hp_label.text = "Health Status\n------------------\n" + \
-		"Little Girl: " + girl_hp + "\n" + \
-		"Monster 1: " + m1_hp + "\n" + \
-		"Monster 2: " + m2_hp + "\n" + \
-		"Monster 3: " + m3_hp
+	var text = "Health Status\n------------------\nLittle Girl: " + girl_hp
+	for i in range(1, 7):
+		var m_name = "Monster" + str(i)
+		var hp = monster_hps.get(m_name, "Dead")
+		text += "\nMonster " + str(i) + ": " + hp
+		
+	hp_label.text = text
 
 ## Callback triggered when the TurnManager changes phases. Updates the turn label.
 func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
