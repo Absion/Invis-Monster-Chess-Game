@@ -17,6 +17,10 @@ var combo_label: Label = Label.new()
 var turn_manager: TurnManager
 var grid_manager: GridManager
 
+# ⚡ Bolt Optimization: Cache for HP UI to avoid continuous string rebuilds and GC overhead
+var _last_hp_state: Dictionary = {}
+var _last_actor_count: int = -1
+
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_setup_ui()
@@ -90,6 +94,26 @@ func setup(turn_mgr: TurnManager, grid: GridManager) -> void:
 func _process(_delta: float) -> void:
 	if not grid_manager: return
 	
+	# ⚡ Bolt Optimization: Check for changes before allocating strings and mutating UI
+	var needs_update = false
+	var current_actor_count = grid_manager.grid.size()
+
+	if current_actor_count != _last_actor_count:
+		needs_update = true
+		_last_actor_count = current_actor_count
+
+	# Quick check for health changes without allocating strings
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
+		var a_name = actor.name
+		var a_hp = actor.current_health
+		if not _last_hp_state.has(a_name) or _last_hp_state[a_name] != a_hp:
+			needs_update = true
+			_last_hp_state[a_name] = a_hp
+
+	if not needs_update and hp_label.text != "":
+		return
+
 	var girl_hp = "Dead"
 	var monster_hps = {}
 	
