@@ -34,6 +34,9 @@ var hit_monsters_this_turn: Array[Actor] = []
 ## Visual mesh that hovers over valid target squares
 var hover_indicator: MeshInstance3D
 
+# ⚡ Bolt Optimization: Cache to prevent redundant 3D transform updates on MouseMotion
+var _last_hovered_cell: Vector2i = Vector2i(-1, -1)
+
 ## Builds and registers the child Service nodes required for Combat.
 func build_services() -> void:
 	grid_manager = GridManager.new()
@@ -140,12 +143,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		if event is InputEventMouseMotion:
 			if grid_manager.is_in_bounds(grid_x, grid_z):
-				hover_indicator.show()
-				var wpos = grid_manager.get_world_position(grid_x, grid_z)
-				wpos.y = 0.01 
-				hover_indicator.position = wpos
+				var current_cell = Vector2i(grid_x, grid_z)
+				if current_cell != _last_hovered_cell:
+					hover_indicator.show()
+					var wpos = grid_manager.get_world_position(grid_x, grid_z)
+					wpos.y = 0.01
+					hover_indicator.position = wpos
+					_last_hovered_cell = current_cell
 				return
-			if hover_indicator: hover_indicator.hide()
+			if hover_indicator:
+				hover_indicator.hide()
+				_last_hovered_cell = Vector2i(-1, -1)
 			
 		elif event is InputEventMouseButton:
 			# Block clicks if it's the AI's turn or a tween is playing
