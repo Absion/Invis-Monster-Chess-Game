@@ -23,3 +23,6 @@
 ## 2026-06-27 - UI String Reconstruction in _process Loop
 **Learning:** Reconstructing UI strings and updating UI `.text` properties continuously inside Godot's `_process()` loop (at 60 FPS) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
 **Action:** Cache primitive states (like actor names, health points, counts) for UI updates and check for changes before re-allocating strings or modifying UI `.text` properties to significantly reduce overhead.
+## 2026-07-10 - Hover Indicator 3D Transform Updates on InputEventMouseMotion
+**Learning:** Continuously updating a 3D Node's transform (e.g., `position` or `hover_indicator.position`) on high-frequency events like `InputEventMouseMotion` triggers unnecessary rendering server invalidations when the underlying logical state (the grid cell being hovered) hasn't actually changed. This is a severe performance anti-pattern.
+**Action:** Cache logical states (e.g., grid cell coordinates) and only update 3D transforms when the logical boundary is crossed (e.g. mouse moves from one cell to another).
