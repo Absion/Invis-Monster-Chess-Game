@@ -27,3 +27,6 @@
 ## 2026-06-27 - 3D Node Transform in InputEventMouseMotion
 **Learning:** Continuously updating a 3D Node's transform (like 'hover_indicator.position = wpos') on every 'InputEventMouseMotion' event triggers rendering server invalidations hundreds of times per second (e.g., with high-polling gaming mice), causing unnecessary overhead when the logical grid cell being hovered hasn't actually changed.
 **Action:** Cache the calculated logical grid coordinate ('_last_hovered_cell'). Only update the 3D visual position or visibility when the mouse actually crosses a boundary into a new logical cell, reducing the update frequency from raw mouse polling rate down to actual cell transitions.
+## 2026-06-27 - GDScript Dictionary Native Methods Performance
+**Learning:** While calling `.keys()` or `.values()` on a Dictionary allocates an Array, replacing Godot's built-in methods (like `values()` and `append_array()`) with manual GDScript 'for' loops is a de-optimization. Native C++ built-ins avoid VM overhead and hash lookups, making them significantly faster despite the allocation.
+**Action:** Use native Godot built-in methods (like `dict.values()`) for iterating through dictionaries instead of manually iterating over keys and doing hash lookups in GDScript.
