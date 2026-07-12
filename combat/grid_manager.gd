@@ -247,6 +247,9 @@ func highlight_attack_range(actor: Actor) -> void:
 	# Loop through a square area around the actor
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
+			# ⚡ Bolt Optimization: Early O(1) prune based on Manhattan distance to avoid expensive A* calculations
+			if abs(x - start.x) + abs(z - start.y) > range_limit: continue
+
 			var end = Vector2i(x, z)
 			if not is_in_bounds(x, z): continue
 			
