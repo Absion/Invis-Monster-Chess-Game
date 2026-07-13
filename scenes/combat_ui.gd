@@ -14,6 +14,7 @@ class_name CombatUI
 var combo_panel: Panel = Panel.new()
 var combo_label: Label = Label.new()
 var special_label: Label = Label.new()
+var heal_label: Label = Label.new()
 
 var turn_manager: TurnManager
 var grid_manager: GridManager
@@ -85,6 +86,15 @@ func _setup_ui() -> void:
 	special_label.text = "★ Special Attack Ready! ★\n       [ Right Click ]"
 	special_label.hide()
 	add_child(special_label)
+	
+	# Heal UI
+	heal_label.position = Vector2(20, 320)
+	heal_label.add_theme_font_size_override("font_size", 22)
+	heal_label.add_theme_color_override("font_color", Color.GREEN)
+	heal_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	heal_label.add_theme_constant_override("outline_size", 4)
+	heal_label.text = "✚ Heal Available [ Press H ]"
+	add_child(heal_label)
 	
 	var scroll = ScrollContainer.new()
 	scroll.position = Vector2(10, 10)
@@ -168,3 +178,6 @@ func update_combo(count: int, time_left: float) -> void:
 	else:
 		combo_panel.hide()
 		special_label.hide()
+
+func clear_heal_ui() -> void:
+	heal_label.hide()

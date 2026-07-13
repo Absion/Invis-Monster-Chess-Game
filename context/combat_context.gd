@@ -30,6 +30,7 @@ var combo_count: int = 0
 var combo_timer: float = 0.0
 var combo_active: bool = false
 var hit_monsters_this_turn: Array[Actor] = []
+var can_heal: bool = true
 
 ## Visual mesh that hovers over valid target squares
 var hover_indicator: MeshInstance3D
@@ -123,6 +124,12 @@ func _find_actor_by_name(actor_name: String) -> Actor:
 
 ## Godot's built-in input interceptor. We use this to detect mouse clicks on the 3D grid.
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_H:
+			if turn_manager.current_phase == TurnManager.TurnPhase.MAN and not is_acting:
+				_handle_heal()
+		return
+		
 	if event is InputEventMouseMotion or (event is InputEventMouseButton and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT) and event.pressed):
 		var camera = get_viewport().get_camera_3d()
 		if not camera: return
@@ -244,6 +251,30 @@ func _handle_special_attack() -> void:
 		is_acting = false
 		print("Special Attack Finished! Combo reset to 0.")
 	)
+
+## Executes the heal ability on the Little Girl
+func _handle_heal() -> void:
+	if not can_heal: return
+	
+	var girl = _find_actor_by_name("Little Girl")
+	if girl and is_instance_valid(girl) and girl.current_health > 0:
+		can_heal = false
+		girl.current_health = min(girl.current_health + 5, girl.data.max_health)
+		print("Little Girl healed for 5 HP! Current HP: ", girl.current_health)
+		
+		# Flash green
+		if is_instance_valid(girl.model):
+			var mat = girl.model.material_override as StandardMaterial3D
+			if mat:
+				var orig_color = mat.albedo_color
+				mat.albedo_color = Color.GREEN
+				var t = get_tree().create_tween()
+				t.tween_interval(0.3)
+				t.tween_callback(func(): if is_instance_valid(girl.model): mat.albedo_color = orig_color)
+				
+		# Clear UI
+		if combat_ui:
+			combat_ui.clear_heal_ui()
 
 ## Executes the fast-paced blind attack mechanic.
 func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
