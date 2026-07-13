@@ -103,8 +103,8 @@ func _process(_delta: float) -> void:
 		_last_actor_count = current_actor_count
 
 	# Quick check for health changes without allocating strings
-	for pos in grid_manager.grid:
-		var actor = grid_manager.grid[pos]
+	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
+	for actor in grid_manager.grid.values():
 		var a_name = actor.name
 		var a_hp = actor.current_health
 		if not _last_hp_state.has(a_name) or _last_hp_state[a_name] != a_hp:
@@ -117,9 +117,8 @@ func _process(_delta: float) -> void:
 	var girl_hp = "Dead"
 	var monster_hps = {}
 	
-	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
-	for pos in grid_manager.grid:
-		var actor = grid_manager.grid[pos]
+	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
+	for actor in grid_manager.grid.values():
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name.begins_with("Monster"):

@@ -30,3 +30,6 @@
 ## 2026-06-27 - Manhattan Distance Pruning before Pathfinding
 **Learning:** When iterating over a square bounding box (`start.x - limit` to `start.x + limit`) to calculate ranges on a grid that doesn't allow diagonal movement (Manhattan geometry), checking `abs(x - start.x) + abs(z - start.y) > range_limit` before calling `astar.get_id_path()` avoids unnecessary path calculations for tiles that are mathematically unreachable. Roughly half the cells in a bounding square are beyond the Manhattan range.
 **Action:** Always insert an $O(1)$ early return `if abs(x - start.x) + abs(z - start.y) > range_limit: continue` inside square range loops before initiating expensive $O(N)$ operations like `AStarGrid2D.get_id_path()`.
+## 2026-06-27 - GDScript Dictionary Native Methods Performance
+**Learning:** While calling `.keys()` or `.values()` on a Dictionary allocates an Array, replacing Godot's built-in methods (like `values()` and `append_array()`) with manual GDScript 'for' loops is a de-optimization. Native C++ built-ins avoid VM overhead and hash lookups, making them significantly faster despite the allocation.
+**Action:** Use native Godot built-in methods (like `dict.values()`) for iterating through dictionaries instead of manually iterating over keys and doing hash lookups in GDScript.
