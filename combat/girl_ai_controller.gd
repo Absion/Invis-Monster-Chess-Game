@@ -62,6 +62,10 @@ func _process_girl_turn() -> void:
 
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
+			# ⚡ Bolt Optimization: Early prune unreachable cells using O(1) Manhattan distance
+			# Avoids expensive AStar path calculations for cells we logically can't reach
+			if abs(x - start.x) + abs(z - start.y) > range_limit: continue
+
 			# Exclude out-of-bounds tiles immediately
 			if not grid_manager.is_in_bounds(x, z): continue
 			

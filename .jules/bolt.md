@@ -27,3 +27,6 @@
 ## 2026-06-27 - 3D Node Transform in InputEventMouseMotion
 **Learning:** Continuously updating a 3D Node's transform (like 'hover_indicator.position = wpos') on every 'InputEventMouseMotion' event triggers rendering server invalidations hundreds of times per second (e.g., with high-polling gaming mice), causing unnecessary overhead when the logical grid cell being hovered hasn't actually changed.
 **Action:** Cache the calculated logical grid coordinate ('_last_hovered_cell'). Only update the 3D visual position or visibility when the mouse actually crosses a boundary into a new logical cell, reducing the update frequency from raw mouse polling rate down to actual cell transitions.
+## 2026-06-27 - Early Pruning in Pathfinding Loops
+**Learning:** When iterating over a square bounding box for pathfinding on a non-diagonal grid (Manhattan geometry), calling AStar path calculations for every cell in the bounding box is incredibly inefficient because nearly half the cells are logically unreachable (corners of the square).
+**Action:** Prune unreachable cells early using an O(1) check like `abs(x - start.x) + abs(z - start.y) > range_limit` to avoid expensive, redundant AStar path calculations.
