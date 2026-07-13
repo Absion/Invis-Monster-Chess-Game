@@ -91,9 +91,8 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 		
 	# 2. Toggle Monster Visibility (Invis Monster Mechanic)
 	# Monsters are ONLY visible during the Girl's turn.
-	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
-	for pos in grid_manager.grid:
-		var actor = grid_manager.grid[pos]
+	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
+	for actor in grid_manager.grid.values():
 		if "Monster" in actor.name:
 			var should_be_visible = (phase == TurnManager.TurnPhase.GIRL)
 			# Only hide if alive
@@ -116,9 +115,8 @@ func _on_turn_started(phase: TurnManager.TurnPhase) -> void:
 
 ## Helper to locate a specific actor instance by their base name.
 func _find_actor_by_name(actor_name: String) -> Actor:
-	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
-	for pos in grid_manager.grid:
-		var actor = grid_manager.grid[pos]
+	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
+	for actor in grid_manager.grid.values():
 		if actor.get_actor_name() == actor_name:
 			return actor
 	return null
@@ -472,9 +470,8 @@ func _on_actor_died(actor: Actor) -> void:
 		return
 		
 	var monsters_alive = 0
-	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .values()
-	for pos in grid_manager.grid:
-		var a = grid_manager.grid[pos]
+	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
+	for a in grid_manager.grid.values():
 		if a and "Monster" in a.name:
 			monsters_alive += 1
 			
