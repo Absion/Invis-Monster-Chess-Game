@@ -38,6 +38,12 @@ func _process_monsters() -> void:
 		elif actor.get_actor_name() == "Little Girl":
 			girl = actor
 			
+	for actor in grid_manager.stacked_actors.values():
+		if "Monster" in actor.name:
+			monsters.append(actor)
+		elif actor.get_actor_name() == "Little Girl":
+			girl = actor
+			
 	# Skip turn entirely if the girl is not on the board or already defeated
 	if girl == null or girl.current_health <= 0:
 		print("Monster AI: Girl not found on the grid or is dead.")
@@ -49,7 +55,7 @@ func _process_monsters() -> void:
 	for monster in monsters:
 		# Double-check validity as an earlier monster's action might have triggered events
 		if is_instance_valid(monster) and monster.current_health > 0:
-			if is_instance_valid(girl) and not girl.is_queued_for_deletion():
+			if is_instance_valid(girl) and girl.current_health > 0:
 				await _process_single_monster(monster, girl)
 			else:
 				# The girl was killed by a previous monster this turn, stop processing
@@ -96,6 +102,9 @@ func _process_single_monster(monster: Actor, target: Actor) -> void:
 		print(monster.name, " moved to ", dest)
 		
 	# Verify adjacency to the target before attempting a strike
+	if not is_instance_valid(target) or target.current_health <= 0:
+		return
+		
 	var distance = abs(monster.grid_x - target.grid_x) + abs(monster.grid_z - target.grid_z)
 	if distance == 1:
 		target.take_damage(monster.data.damage)

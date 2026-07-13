@@ -123,7 +123,7 @@ func _find_actor_by_name(actor_name: String) -> Actor:
 
 ## Godot's built-in input interceptor. We use this to detect mouse clicks on the 3D grid.
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+	if event is InputEventMouseMotion or (event is InputEventMouseButton and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT) and event.pressed):
 		var camera = get_viewport().get_camera_3d()
 		if not camera: return
 		
@@ -162,6 +162,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			if active_actor == null:
 				return
 				
+			if event.button_index == MOUSE_BUTTON_RIGHT:
+				if active_actor.get_actor_name() == "Old Man" and combo_count >= 3:
+					_handle_special_attack()
+				elif active_actor.get_actor_name() == "Old Man":
+					print("Special attack not ready! Need Combo 3+")
+				return
+				
 			_handle_grid_click(grid_x, grid_z)
 
 ## Processes the logical intent of the player clicking on a specific grid cell.
@@ -182,6 +189,61 @@ func _handle_grid_click(x: int, z: int) -> void:
 	is_acting = true
 	await _execute_blind_attack(active_actor, x, z)
 	is_acting = false
+		
+## Executes the AOE Special Attack for the Old Man
+func _handle_special_attack() -> void:
+	is_acting = true
+	combo_count = 0
+	combo_active = false
+	if combat_ui:
+		combat_ui.update_combo(0, 0.0)
+	
+	print("SPECIAL AOE ATTACK ACTIVATED!")
+	
+	var actor = active_actor
+	var dirs = [
+		Vector2i(0, -1), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1),
+		Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1)
+	]
+	
+	var tween = actor.create_tween()
+	var original_pos = actor.model.position
+	var damage = actor.data.damage
+	
+	for dir in dirs:
+		var nx = actor.grid_x + dir.x
+		var nz = actor.grid_z + dir.y
+		if not grid_manager.is_in_bounds(nx, nz):
+			continue
+			
+		var target_wpos = grid_manager.get_world_position(nx, nz)
+		var local_target = target_wpos - actor.global_position
+		local_target.y = original_pos.y
+		
+		# Dash out
+		tween.tween_property(actor.model, "position", local_target, 0.04)
+		
+		# Apply damage at peak
+		tween.tween_callback(func():
+			var target = grid_manager.get_actor_at(nx, nz)
+			if target and "Monster" in target.name:
+				print("AOE Hit on ", target.name, "!")
+				if is_instance_valid(target) and is_instance_valid(target.model):
+					target.model.visible = true
+					var t = target.create_tween()
+					t.tween_interval(0.5)
+					t.tween_callback(func(): if is_instance_valid(target) and is_instance_valid(target.model): target.model.visible = false)
+				target.take_damage(damage)
+		)
+		
+		# Dash back
+		tween.tween_property(actor.model, "position", original_pos, 0.04)
+		
+	tween.tween_callback(func():
+		actor.model.position = original_pos
+		is_acting = false
+		print("Special Attack Finished! Combo reset to 0.")
+	)
 
 ## Executes the fast-paced blind attack mechanic.
 func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:

@@ -13,6 +13,7 @@ class_name CombatUI
 
 var combo_panel: Panel = Panel.new()
 var combo_label: Label = Label.new()
+var special_label: Label = Label.new()
 
 var turn_manager: TurnManager
 var grid_manager: GridManager
@@ -74,6 +75,16 @@ func _setup_ui() -> void:
 	combo_label.add_theme_font_size_override("font_size", 20)
 	combo_label.add_theme_color_override("font_color", Color.YELLOW)
 	combo_panel.add_child(combo_label)
+	
+	# Special Ready UI
+	special_label.position = Vector2(20, 240)
+	special_label.add_theme_font_size_override("font_size", 22)
+	special_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0))
+	special_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	special_label.add_theme_constant_override("outline_size", 4)
+	special_label.text = "★ Special Attack Ready! ★\n       [ Right Click ]"
+	special_label.hide()
+	add_child(special_label)
 	
 	var scroll = ScrollContainer.new()
 	scroll.position = Vector2(10, 10)
@@ -150,5 +161,10 @@ func update_combo(count: int, time_left: float) -> void:
 	if count > 0:
 		combo_panel.show()
 		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
+		if count >= 3:
+			special_label.show()
+		else:
+			special_label.hide()
 	else:
 		combo_panel.hide()
+		special_label.hide()

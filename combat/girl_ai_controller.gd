@@ -34,6 +34,12 @@ func _process_girl_turn() -> void:
 		elif "Monster" in actor.name:
 			monsters.append(actor)
 			
+	for actor in grid_manager.stacked_actors.values():
+		if actor.get_actor_name() == "Little Girl":
+			girl = actor
+		elif "Monster" in actor.name:
+			monsters.append(actor)
+			
 	# End the turn immediately if the girl is missing or dead
 	if girl == null or girl.current_health <= 0:
 		turn_manager.end_turn()
