@@ -23,6 +23,9 @@ var grid_manager: GridManager
 var _last_hp_state: Dictionary = {}
 var _last_actor_count: int = -1
 
+var _last_combo_count: int = -1
+var _last_combo_time: float = -1.0
+
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_setup_ui()
@@ -168,6 +171,13 @@ func _on_end_turn_pressed() -> void:
 		turn_manager.end_turn()
 
 func update_combo(count: int, time_left: float) -> void:
+	# ⚡ Bolt Optimization: Prevent redundant string allocations and layout recalculations every frame
+	if count == _last_combo_count and time_left == _last_combo_time:
+		return
+
+	_last_combo_count = count
+	_last_combo_time = time_left
+
 	if count > 0:
 		combo_panel.show()
 		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
