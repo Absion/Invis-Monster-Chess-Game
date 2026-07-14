@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dk7c5siu60prk"]
+
+[ext_resource type="PackedScene" uid="uid://bh2se526i5wh1" path="res://resources/weapons/Low poly combat axes.glb" id="1_rj0ke"]
+
+[node name="Low poly combat axes" unique_id=1844916698 instance=ExtResource("1_rj0ke")]
+
+[node name="Axe10_001" parent="." index="10" unique_id=1458002838]
+transform = Transform3D(0.6427876, 0.19826688, -0.7399421, 0, 0.96592575, 0.25881904, 0.7660444, -0.16636567, 0.6208852, 0.83629286, 0.7618321, -0.7164826)
+
+[node name="Axe10_002" parent="." index="11" unique_id=1001740230]
+transform = Transform3D(0.63302225, -0.09045131, 0.7688312, -0.17364813, 0.95125127, 0.25488698, -0.7544064, -0.29485524, 0.58645654, -1.1030215, 0.74628896, -0.44549668)

@@ -208,10 +208,12 @@ func _handle_special_attack() -> void:
 	print("SPECIAL AOE ATTACK ACTIVATED!")
 	
 	var actor = active_actor
-	var dirs = [
-		Vector2i(0, -1), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1),
-		Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1)
-	]
+	var dirs = []
+	for dx in range(-2, 3):
+		for dz in range(-2, 3):
+			if dx == 0 and dz == 0:
+				continue
+			dirs.append(Vector2i(dx, dz))
 	
 	var tween = actor.create_tween()
 	var original_pos = actor.model.position
@@ -232,6 +234,14 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
+			var axe = actor.model.get_node_or_null("AxeWeapon")
+			if axe:
+				var ap = axe.get_node_or_null("AnimationPlayer")
+				if ap:
+					# Restart animation to make it rapid-fire on every single dash
+					ap.stop()
+					ap.play("AtkAxe01")
+					
 			var target = grid_manager.get_actor_at(nx, nz)
 			if target and "Monster" in target.name:
 				print("AOE Hit on ", target.name, "!")
@@ -249,7 +259,8 @@ func _handle_special_attack() -> void:
 	tween.tween_callback(func():
 		actor.model.position = original_pos
 		is_acting = false
-		print("Special Attack Finished! Combo reset to 0.")
+		print("Special Attack Finished! Turn ends.")
+		turn_manager.end_turn()
 	)
 
 ## Executes the heal ability on the Little Girl
@@ -299,6 +310,14 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 		
 	# Arrived safely! Execute the attack on the target tile.
 	var target = grid_manager.get_actor_at(target_x, target_z)
+	
+	# Play the axe swing animation
+	var axe = actor.model.get_node_or_null("AxeWeapon")
+	if axe:
+		var ap = axe.get_node_or_null("AnimationPlayer")
+		if ap:
+			ap.play("AtkAxe01")
+			
 	if target and "Monster" in target.name:
 		if hit_monsters_this_turn.has(target):
 			print("Already hit this monster! Red X appears.")
@@ -349,12 +368,16 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 					unhit_monsters += 1
 					
 		if unhit_monsters == 0:
-			print("Hit all monsters! Ending turn.")
-			combo_active = false
-			turn_manager.end_turn()
-		else:
-			# Refresh highlights from his new location so he can combo again
-			grid_manager.highlight_attack_range(actor)
+			if combo_count < 3:
+				print("Hit all monsters but lack combo 3. Ending turn.")
+				combo_active = false
+				turn_manager.end_turn()
+				return
+			else:
+				print("Hit all monsters! Waiting for combo timeout or special attack.")
+			
+		# Refresh highlights from his new location so he can combo again (or clear them if none left)
+		grid_manager.highlight_attack_range(actor)
 		return
 	else:
 		print("SWISH! The Old Man swung at the air.")
@@ -550,7 +573,37 @@ func _create_actor(actor_name: String, actor_data: ActorData, color: Color) -> A
 	actor.add_child(model)
 	# Save a reference to the model so we can easily toggle its visibility later
 	actor.model = model 
+	
+	if actor_name == "Old Man":
+		# Load the .glb file directly to bypass any issues with the user's saved .tscn file
+		var axe_scene = load("res://resources/weapons/Low poly combat axes.glb")
+		if axe_scene:
+			print("SUCCESS: Axe GLB Loaded!")
+			var axe = axe_scene.instantiate()
+			axe.name = "AxeWeapon"
+			
+			# Force visibility on all sub-meshes in case they were hidden in Blender
+			_force_visible(axe)
+			
+			# Increase scale massively so it is undeniably visible
+			axe.scale = Vector3(10.0, 10.0, 10.0)
+			axe.position = Vector3(0, 2.0, 0) # Place it high above him so it doesn't clip into the floor
+			model.add_child(axe)
+			
+			# Autoplay idle or attack to make sure the animation player resets the pose
+			var ap = axe.get_node_or_null("AnimationPlayer")
+			if ap:
+				ap.play("AtkAxe01")
+		else:
+			print("ERROR: Could not load the Axe GLB!")
+			
 	return actor
+
+func _force_visible(node: Node) -> void:
+	if node is Node3D:
+		node.visible = true
+	for child in node.get_children():
+		_force_visible(child)
 
 ## Callback triggered when an actor's health reaches 0.
 func _on_actor_died(actor: Actor) -> void:
