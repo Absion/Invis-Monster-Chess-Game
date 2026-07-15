@@ -33,3 +33,6 @@
 ## 2026-06-27 - GDScript Dictionary Native Methods Performance
 **Learning:** While calling `.keys()` or `.values()` on a Dictionary allocates an Array, replacing Godot's built-in methods (like `values()` and `append_array()`) with manual GDScript 'for' loops is a de-optimization. Native C++ built-ins avoid VM overhead and hash lookups, making them significantly faster despite the allocation.
 **Action:** Use native Godot built-in methods (like `dict.values()`) for iterating through dictionaries instead of manually iterating over keys and doing hash lookups in GDScript.
+## 2026-06-27 - Heuristic Pruning Before Pathfinding in GirlAIController
+**Learning:** Calculating an exact A* path just to evaluate if a target cell is valid is incredibly expensive when done inside a nested grid loop (O(R^2)). If the decision to select a cell depends on a simpler heuristic (like Manhattan distance to enemies), calculating that heuristic first and pruning the branch avoids the O(N) pathfinding cost for sub-optimal cells.
+**Action:** Always hoist heuristic calculations (like distance checks to monsters) above expensive pathfinding calls (like `get_id_path`) in search loops. If the heuristic score is worse than the current best score, `continue` immediately to skip the path calculation.
