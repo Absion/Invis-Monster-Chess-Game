@@ -79,22 +79,25 @@ func _process_girl_turn() -> void:
 			if not grid_manager.is_cell_walkable(x, z) and end != start:
 				continue
 				
+			# ⚡ Bolt Optimization: Calculate heuristic distance score BEFORE expensive A* pathfinding
+			var min_dist_to_monster = 9999.0
+			for monster in monsters:
+				var dist = abs(x - monster.grid_x) + abs(z - monster.grid_z)
+				if dist < min_dist_to_monster:
+					min_dist_to_monster = dist
+
+			# ⚡ Bolt Optimization: Early O(1) prune if the heuristic is worse than our current best score
+			if min_dist_to_monster <= max_distance_score:
+				continue
+
 			# ⚡ Bolt Optimization: Use get_id_path directly instead of get_grid_path
 			# We already know 'end' is not solid because of is_cell_walkable, and 'start' is cleared
 			var path = grid_manager.astar.get_id_path(start, end)
 			
 			# Only consider this tile if it's reachable within our movement limit
 			if not path.is_empty() and path.size() - 1 <= range_limit:
-				# Calculate minimum distance to any monster from this tile
-				var min_dist_to_monster = 9999.0
-				for monster in monsters:
-					var dist = abs(x - monster.grid_x) + abs(z - monster.grid_z)
-					if dist < min_dist_to_monster:
-						min_dist_to_monster = dist
-						
-				if min_dist_to_monster > max_distance_score:
-					max_distance_score = min_dist_to_monster
-					best_move = end
+				max_distance_score = min_dist_to_monster
+				best_move = end
 					
 	# Restore start solid state
 	if start_was_solid:
