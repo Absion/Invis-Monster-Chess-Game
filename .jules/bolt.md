@@ -36,3 +36,6 @@
 ## 2026-06-27 - Heuristic Pruning Before Pathfinding in GirlAIController
 **Learning:** Calculating an exact A* path just to evaluate if a target cell is valid is incredibly expensive when done inside a nested grid loop (O(R^2)). If the decision to select a cell depends on a simpler heuristic (like Manhattan distance to enemies), calculating that heuristic first and pruning the branch avoids the O(N) pathfinding cost for sub-optimal cells.
 **Action:** Always hoist heuristic calculations (like distance checks to monsters) above expensive pathfinding calls (like `get_id_path`) in search loops. If the heuristic score is worse than the current best score, `continue` immediately to skip the path calculation.
+## 2026-06-27 - Redundant UI String Formatting in High-Frequency Methods
+**Learning:** Reconstructing UI strings using format specifiers (e.g., `"%d, %.2f" % [count, time_left]`) and updating UI properties continuously in methods called every frame (like `_process`) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
+**Action:** Cache primitive states for UI updates and check for changes before re-allocating formatted strings or modifying UI properties to significantly reduce overhead.
