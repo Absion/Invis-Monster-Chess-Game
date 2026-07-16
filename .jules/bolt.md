@@ -39,3 +39,7 @@
 ## 2026-06-27 - Redundant UI String Formatting in High-Frequency Methods
 **Learning:** Reconstructing UI strings using format specifiers (e.g., `"%d, %.2f" % [count, time_left]`) and updating UI properties continuously in methods called every frame (like `_process`) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
 **Action:** Cache primitive states for UI updates and check for changes before re-allocating formatted strings or modifying UI properties to significantly reduce overhead.
+
+## 2026-06-27 - Dictionary Values Allocation Degradation
+**Learning:** Re-writing `for key in dict:` to `for val in dict.values():` might seem elegant, but in GDScript `.values()` allocates an array every single time. Doing this inside deep loops actively degrades performance and can cause NullPointer crashes if null checking is bypassed via object reconstruction.
+**Action:** Retain `for key in dict:` for zero-allocation iteration. If you MUST use `.values()` inside a hot loop (like `_process()`), assign it to a local variable ONCE per frame (`var actors = dict.values()`) and loop over that cached array.
