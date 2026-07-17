@@ -39,3 +39,7 @@
 ## 2026-06-27 - Redundant UI String Formatting in High-Frequency Methods
 **Learning:** Reconstructing UI strings using format specifiers (e.g., `"%d, %.2f" % [count, time_left]`) and updating UI properties continuously in methods called every frame (like `_process`) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
 **Action:** Cache primitive states for UI updates and check for changes before re-allocating formatted strings or modifying UI properties to significantly reduce overhead.
+
+## 2026-06-27 - Local vs Global Dictionary Caching for GC Optimization
+**Learning:** While trying to prevent multiple per-frame GC allocations by caching `.values()` from a Godot dictionary in a hot loop, caching it across frames globally (using a class property like `_cached_actors`) based on a simplistic size check (`dict.size() == cache.size()`) is dangerous. It can lead to stale references (and use-after-free crashes) if an actor dies and a new one spawns simultaneously, keeping the array size identical.
+**Action:** When optimizing away redundant dictionary-to-array conversions (`.values()`) inside a single pass/frame (like `_process`), cache the resulting array into a *local* variable at the start of the function rather than trying to persist it across frames unless using strict reference-tracking.

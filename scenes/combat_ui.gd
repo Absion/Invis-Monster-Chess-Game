@@ -126,9 +126,11 @@ func _process(_delta: float) -> void:
 		needs_update = true
 		_last_actor_count = current_actor_count
 
+	# ⚡ Bolt Optimization: Fetch .values() once locally per frame to halve GC allocations
+	var current_actors = grid_manager.grid.values()
+
 	# Quick check for health changes without allocating strings
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	for actor in current_actors:
 		var a_name = actor.name
 		var a_hp = actor.current_health
 		if not _last_hp_state.has(a_name) or _last_hp_state[a_name] != a_hp:
@@ -141,8 +143,7 @@ func _process(_delta: float) -> void:
 	var girl_hp = "Dead"
 	var monster_hps = {}
 	
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	for actor in current_actors:
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name.begins_with("Monster"):
