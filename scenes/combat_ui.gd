@@ -126,9 +126,11 @@ func _process(_delta: float) -> void:
 		needs_update = true
 		_last_actor_count = current_actor_count
 
+	# ⚡ Bolt Optimization: Cache .values() locally for the frame to avoid redundant allocations
+	var grid_actors = grid_manager.grid.values()
+
 	# Quick check for health changes without allocating strings
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	for actor in grid_actors:
 		var a_name = actor.name
 		var a_hp = actor.current_health
 		if not _last_hp_state.has(a_name) or _last_hp_state[a_name] != a_hp:
@@ -141,8 +143,7 @@ func _process(_delta: float) -> void:
 	var girl_hp = "Dead"
 	var monster_hps = {}
 	
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	for actor in grid_actors:
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name.begins_with("Monster"):
@@ -171,16 +172,19 @@ func _on_end_turn_pressed() -> void:
 		turn_manager.end_turn()
 
 func update_combo(count: int, time_left: float) -> void:
+	# ⚡ Bolt Optimization: Snap time_left to 2 decimal places to match UI and prevent cache misses every frame
+	var snapped_time = snapped(time_left, 0.01)
+
 	# ⚡ Bolt Optimization: Prevent redundant string allocations and layout recalculations every frame
-	if count == _last_combo_count and time_left == _last_combo_time:
+	if count == _last_combo_count and snapped_time == _last_combo_time:
 		return
 
 	_last_combo_count = count
-	_last_combo_time = time_left
+	_last_combo_time = snapped_time
 
 	if count > 0:
 		combo_panel.show()
-		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
+		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, snapped_time]
 		if count >= 3:
 			special_label.show()
 		else:

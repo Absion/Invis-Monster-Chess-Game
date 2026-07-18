@@ -39,3 +39,6 @@
 ## 2026-06-27 - Redundant UI String Formatting in High-Frequency Methods
 **Learning:** Reconstructing UI strings using format specifiers (e.g., `"%d, %.2f" % [count, time_left]`) and updating UI properties continuously in methods called every frame (like `_process`) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
 **Action:** Cache primitive states for UI updates and check for changes before re-allocating formatted strings or modifying UI properties to significantly reduce overhead.
+## 2026-06-27 - Float Caching for UI Re-renders
+**Learning:** When checking floating-point values (like remaining times calculated from `delta`) to conditionally update a UI element and prevent redundant string allocations, the cache will miss almost every single frame due to microscopic floating-point differences.
+**Action:** Snap the tracked float variable to the required UI precision (e.g. using `snapped(time_left, 0.01)` to match `%.2f`) *before* evaluating the cache check. This prevents the cache buster from failing redundantly and actually saves the UI layout recalculations.
