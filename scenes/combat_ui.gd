@@ -172,15 +172,17 @@ func _on_end_turn_pressed() -> void:
 
 func update_combo(count: int, time_left: float) -> void:
 	# ⚡ Bolt Optimization: Prevent redundant string allocations and layout recalculations every frame
-	if count == _last_combo_count and time_left == _last_combo_time:
+	# Snap the float to the UI's display precision to avoid constant cache misses from microscopic frame deltas
+	var display_time = snapped(time_left, 0.01)
+	if count == _last_combo_count and display_time == _last_combo_time:
 		return
 
 	_last_combo_count = count
-	_last_combo_time = time_left
+	_last_combo_time = display_time
 
 	if count > 0:
 		combo_panel.show()
-		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
+		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, display_time]
 		if count >= 3:
 			special_label.show()
 		else:
