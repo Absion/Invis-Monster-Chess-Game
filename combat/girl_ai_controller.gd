@@ -27,14 +27,16 @@ func _process_girl_turn() -> void:
 	var girl: Actor = null
 	var monsters: Array[Actor] = []
 	
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	# ⚡ Bolt Optimization: Iterate dictionary keys natively to avoid .values() Array allocation
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:
 			monsters.append(actor)
 			
-	for actor in grid_manager.stacked_actors.values():
+	for pos in grid_manager.stacked_actors:
+		var actor = grid_manager.stacked_actors[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:
