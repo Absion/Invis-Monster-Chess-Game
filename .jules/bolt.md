@@ -43,3 +43,6 @@
 ## 2026-06-27 - Dictionary Values Allocation Degradation
 **Learning:** Re-writing `for key in dict:` to `for val in dict.values():` might seem elegant, but in GDScript `.values()` allocates an array every single time. Doing this inside deep loops actively degrades performance and can cause NullPointer crashes if null checking is bypassed via object reconstruction.
 **Action:** Retain `for key in dict:` for zero-allocation iteration. If you MUST use `.values()` inside a hot loop (like `_process()`), assign it to a local variable ONCE per frame (`var actors = dict.values()`) and loop over that cached array.
+## 2026-06-27 - Object Property Access in Deep Loops
+**Learning:** Accessing Object properties (like `monster.grid_x`) repeatedly inside deeply nested loops is slow due to GDScript VM overhead and dynamic lookups.
+**Action:** Cache these properties into strictly-typed arrays of primitives or structs (like `Vector2i`) before the loop to replace expensive object property lookups with much faster value-type accesses.
