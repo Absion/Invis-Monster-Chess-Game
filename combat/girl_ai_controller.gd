@@ -65,6 +65,12 @@ func _process_girl_turn() -> void:
 	if start_was_solid:
 		grid_manager.astar.set_point_solid(start, false)
 
+	# ⚡ Bolt Optimization: Cache object properties into strictly-typed arrays before deep loops
+	# This replaces expensive GDScript VM dynamic property lookups with fast value-type access
+	var monster_positions: Array[Vector2i] = []
+	for monster in monsters:
+		monster_positions.append(Vector2i(monster.grid_x, monster.grid_z))
+
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
 			# ⚡ Bolt Optimization: Early O(1) prune based on Manhattan distance to avoid expensive A* calculations
@@ -81,8 +87,9 @@ func _process_girl_turn() -> void:
 				
 			# ⚡ Bolt Optimization: Calculate heuristic distance score BEFORE expensive A* pathfinding
 			var min_dist_to_monster = 9999.0
-			for monster in monsters:
-				var dist = abs(x - monster.grid_x) + abs(z - monster.grid_z)
+			# Use the cached vector primitive instead of dynamic object property lookup
+			for m_pos in monster_positions:
+				var dist = abs(x - m_pos.x) + abs(z - m_pos.y)
 				if dist < min_dist_to_monster:
 					min_dist_to_monster = dist
 
