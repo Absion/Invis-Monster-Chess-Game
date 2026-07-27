@@ -23,6 +23,9 @@ var grid_manager: GridManager
 var _last_hp_state: Dictionary = {}
 var _last_actor_count: int = -1
 
+var _last_combo_count: int = -1
+var _last_combo_time: float = -1.0
+
 ## Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	_setup_ui()
@@ -124,8 +127,9 @@ func _process(_delta: float) -> void:
 		_last_actor_count = current_actor_count
 
 	# Quick check for health changes without allocating strings
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	# ⚡ Bolt Optimization: Iterate directly on keys to prevent Array allocations per frame
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		var a_name = actor.name
 		var a_hp = actor.current_health
 		if not _last_hp_state.has(a_name) or _last_hp_state[a_name] != a_hp:
@@ -138,8 +142,9 @@ func _process(_delta: float) -> void:
 	var girl_hp = "Dead"
 	var monster_hps = {}
 	
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	# ⚡ Bolt Optimization: Iterate directly on keys
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl_hp = str(actor.current_health) + "/" + str(actor.data.max_health)
 		elif actor.name.begins_with("Monster"):
@@ -168,9 +173,18 @@ func _on_end_turn_pressed() -> void:
 		turn_manager.end_turn()
 
 func update_combo(count: int, time_left: float) -> void:
+	# ⚡ Bolt Optimization: Prevent redundant string allocations and layout recalculations every frame
+	# Snap the float to the UI's display precision to avoid constant cache misses from microscopic frame deltas
+	var display_time = snapped(time_left, 0.01)
+	if count == _last_combo_count and display_time == _last_combo_time:
+		return
+
+	_last_combo_count = count
+	_last_combo_time = display_time
+
 	if count > 0:
 		combo_panel.show()
-		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, time_left]
+		combo_label.text = "COMBO: x%d\nTime: %.2fs" % [count, display_time]
 		if count >= 3:
 			special_label.show()
 		else:

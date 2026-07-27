@@ -27,14 +27,16 @@ func _process_girl_turn() -> void:
 	var girl: Actor = null
 	var monsters: Array[Actor] = []
 	
-	# ⚡ Bolt Optimization: Use native .values() to avoid GDScript VM overhead and slow hash lookups
-	for actor in grid_manager.grid.values():
+	# ⚡ Bolt Optimization: Iterate dictionary keys natively to avoid .values() Array allocation
+	for pos in grid_manager.grid:
+		var actor = grid_manager.grid[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:
 			monsters.append(actor)
 			
-	for actor in grid_manager.stacked_actors.values():
+	for pos in grid_manager.stacked_actors:
+		var actor = grid_manager.stacked_actors[pos]
 		if actor.get_actor_name() == "Little Girl":
 			girl = actor
 		elif "Monster" in actor.name:
@@ -59,11 +61,23 @@ func _process_girl_turn() -> void:
 	var range_limit = girl.get_movement_range()
 	var start = Vector2i(girl.grid_x, girl.grid_z)
 	
+	# ⚡ Bolt Optimization: Cache object properties into an array of strictly-typed primitives.
+	# Accessing object properties (monster.grid_x) inside deeply nested loops has high GDScript VM overhead.
+	var monster_positions: Array[Vector2i] = []
+	for monster in monsters:
+		monster_positions.append(Vector2i(monster.grid_x, monster.grid_z))
+
 	# ⚡ Bolt Optimization: Extract start cell clearing outside the nested loops
 	# Avoid redundant AStar state mutations (O(R^2)) for the same start position
 	var start_was_solid = grid_manager.astar.is_point_solid(start)
 	if start_was_solid:
 		grid_manager.astar.set_point_solid(start, false)
+
+	# ⚡ Bolt Optimization: Cache object properties into an array of value types (Vector2i) before the loop
+	# This avoids slow GDScript object property lookups inside the deeply nested O(R^2) loop
+	var monster_positions: Array[Vector2i] = []
+	for m in monsters:
+		monster_positions.append(Vector2i(m.grid_x, m.grid_z))
 
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
@@ -79,22 +93,25 @@ func _process_girl_turn() -> void:
 			if not grid_manager.is_cell_walkable(x, z) and end != start:
 				continue
 				
+			# ⚡ Bolt Optimization: Calculate heuristic distance score BEFORE expensive A* pathfinding
+			var min_dist_to_monster = 9999.0
+			for m_pos in monster_positions:
+				var dist = abs(x - m_pos.x) + abs(z - m_pos.y)
+				if dist < min_dist_to_monster:
+					min_dist_to_monster = dist
+
+			# ⚡ Bolt Optimization: Early O(1) prune if the heuristic is worse than our current best score
+			if min_dist_to_monster <= max_distance_score:
+				continue
+
 			# ⚡ Bolt Optimization: Use get_id_path directly instead of get_grid_path
 			# We already know 'end' is not solid because of is_cell_walkable, and 'start' is cleared
 			var path = grid_manager.astar.get_id_path(start, end)
 			
 			# Only consider this tile if it's reachable within our movement limit
 			if not path.is_empty() and path.size() - 1 <= range_limit:
-				# Calculate minimum distance to any monster from this tile
-				var min_dist_to_monster = 9999.0
-				for monster in monsters:
-					var dist = abs(x - monster.grid_x) + abs(z - monster.grid_z)
-					if dist < min_dist_to_monster:
-						min_dist_to_monster = dist
-						
-				if min_dist_to_monster > max_distance_score:
-					max_distance_score = min_dist_to_monster
-					best_move = end
+				max_distance_score = min_dist_to_monster
+				best_move = end
 					
 	# Restore start solid state
 	if start_was_solid:

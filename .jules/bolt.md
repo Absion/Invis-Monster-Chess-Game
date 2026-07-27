@@ -33,3 +33,23 @@
 ## 2026-06-27 - GDScript Dictionary Native Methods Performance
 **Learning:** While calling `.keys()` or `.values()` on a Dictionary allocates an Array, replacing Godot's built-in methods (like `values()` and `append_array()`) with manual GDScript 'for' loops is a de-optimization. Native C++ built-ins avoid VM overhead and hash lookups, making them significantly faster despite the allocation.
 **Action:** Use native Godot built-in methods (like `dict.values()`) for iterating through dictionaries instead of manually iterating over keys and doing hash lookups in GDScript.
+## 2026-06-27 - Heuristic Pruning Before Pathfinding in GirlAIController
+**Learning:** Calculating an exact A* path just to evaluate if a target cell is valid is incredibly expensive when done inside a nested grid loop (O(R^2)). If the decision to select a cell depends on a simpler heuristic (like Manhattan distance to enemies), calculating that heuristic first and pruning the branch avoids the O(N) pathfinding cost for sub-optimal cells.
+**Action:** Always hoist heuristic calculations (like distance checks to monsters) above expensive pathfinding calls (like `get_id_path`) in search loops. If the heuristic score is worse than the current best score, `continue` immediately to skip the path calculation.
+## 2026-06-27 - Redundant UI String Formatting in High-Frequency Methods
+**Learning:** Reconstructing UI strings using format specifiers (e.g., `"%d, %.2f" % [count, time_left]`) and updating UI properties continuously in methods called every frame (like `_process`) generates significant garbage collection overhead and forces unnecessary text layout recalculations, especially when the underlying state hasn't changed.
+**Action:** Cache primitive states for UI updates and check for changes before re-allocating formatted strings or modifying UI properties to significantly reduce overhead.
+
+## 2026-06-27 - Dictionary Values Allocation Degradation
+**Learning:** Re-writing `for key in dict:` to `for val in dict.values():` might seem elegant, but in GDScript `.values()` allocates an array every single time. Doing this inside deep loops actively degrades performance and can cause NullPointer crashes if null checking is bypassed via object reconstruction.
+**Action:** Retain `for key in dict:` for zero-allocation iteration. If you MUST use `.values()` inside a hot loop (like `_process()`), assign it to a local variable ONCE per frame (`var actors = dict.values()`) and loop over that cached array.
+## 2026-06-27 - Object Property Access in Deep Nested Loops
+**Learning:** Accessing Object properties (like `actor.grid_x`) repeatedly inside deeply nested loops is surprisingly slow due to the GDScript VM overhead and dynamic property lookups. Inside $O(R^2 \times Entities)$ algorithms, this overhead accumulates heavily.
+**Action:** Always cache these properties into strictly-typed arrays of primitive values or structs (e.g., `Array[Vector2i]`) *before* the nested loops. Replace expensive object property lookups inside the loop with much faster value-type array accesses.
+## 2026-06-27 - Object Property Access in Nested Loops
+**Learning:** Accessing Object properties (e.g., `monster.grid_x`) repeatedly inside deeply nested loops is slow due to GDScript VM overhead and dynamic lookups.
+**Action:** Cache these properties into strictly-typed arrays of primitives or structs (like `Vector2i`) before the loop to replace expensive object property lookups with much faster value-type accesses.
+
+## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
+**Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
+**Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
