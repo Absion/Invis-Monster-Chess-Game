@@ -73,8 +73,10 @@ func get_actor_at(x: int, z: int) -> Actor:
 ## Returns all actors currently on the grid (including stacked ones).
 func get_all_actors() -> Array[Actor]:
 	var all: Array[Actor] = []
-	all.append_array(grid.values() as Array[Actor])
-	all.append_array(stacked_actors.values() as Array[Actor])
+	for pos in grid:
+		all.append(grid[pos])
+	for pos in stacked_actors:
+		all.append(stacked_actors[pos])
 	return all
 
 ## Places an actor precisely at the logical coordinates.

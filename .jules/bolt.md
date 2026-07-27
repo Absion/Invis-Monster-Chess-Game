@@ -46,3 +46,10 @@
 ## 2026-06-27 - Object Property Access in Deep Nested Loops
 **Learning:** Accessing Object properties (like `actor.grid_x`) repeatedly inside deeply nested loops is surprisingly slow due to the GDScript VM overhead and dynamic property lookups. Inside $O(R^2 \times Entities)$ algorithms, this overhead accumulates heavily.
 **Action:** Always cache these properties into strictly-typed arrays of primitive values or structs (e.g., `Array[Vector2i]`) *before* the nested loops. Replace expensive object property lookups inside the loop with much faster value-type array accesses.
+## 2026-06-27 - Object Property Access in Nested Loops
+**Learning:** Accessing Object properties (e.g., `monster.grid_x`) repeatedly inside deeply nested loops is slow due to GDScript VM overhead and dynamic lookups.
+**Action:** Cache these properties into strictly-typed arrays of primitives or structs (like `Vector2i`) before the loop to replace expensive object property lookups with much faster value-type accesses.
+
+## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
+**Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
+**Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
