@@ -61,6 +61,12 @@ func _process_girl_turn() -> void:
 	var range_limit = girl.get_movement_range()
 	var start = Vector2i(girl.grid_x, girl.grid_z)
 	
+	# ⚡ Bolt Optimization: Cache object properties into an array of strictly-typed primitives.
+	# Accessing object properties (monster.grid_x) inside deeply nested loops has high GDScript VM overhead.
+	var monster_positions: Array[Vector2i] = []
+	for monster in monsters:
+		monster_positions.append(Vector2i(monster.grid_x, monster.grid_z))
+
 	# ⚡ Bolt Optimization: Extract start cell clearing outside the nested loops
 	# Avoid redundant AStar state mutations (O(R^2)) for the same start position
 	var start_was_solid = grid_manager.astar.is_point_solid(start)
