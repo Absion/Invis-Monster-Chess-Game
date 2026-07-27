@@ -73,11 +73,6 @@ func _process_girl_turn() -> void:
 	if start_was_solid:
 		grid_manager.astar.set_point_solid(start, false)
 
-	# ⚡ Bolt Optimization: Cache object properties into an array of value types (Vector2i) before the loop
-	# This avoids slow GDScript object property lookups inside the deeply nested O(R^2) loop
-	var monster_positions: Array[Vector2i] = []
-	for m in monsters:
-		monster_positions.append(Vector2i(m.grid_x, m.grid_z))
 
 	for x in range(start.x - range_limit, start.x + range_limit + 1):
 		for z in range(start.y - range_limit, start.y + range_limit + 1):
