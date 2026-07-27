@@ -43,3 +43,7 @@
 ## 2026-06-27 - Dictionary Values Allocation Degradation
 **Learning:** Re-writing `for key in dict:` to `for val in dict.values():` might seem elegant, but in GDScript `.values()` allocates an array every single time. Doing this inside deep loops actively degrades performance and can cause NullPointer crashes if null checking is bypassed via object reconstruction.
 **Action:** Retain `for key in dict:` for zero-allocation iteration. If you MUST use `.values()` inside a hot loop (like `_process()`), assign it to a local variable ONCE per frame (`var actors = dict.values()`) and loop over that cached array.
+
+## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
+**Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
+**Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
