@@ -229,16 +229,27 @@ func _handle_special_attack() -> void:
 		var local_target = target_wpos - actor.global_position
 		local_target.y = original_pos.y
 		
-		# Dash out
+		# Rotate to face target then dash
+		tween.tween_callback(func():
+			var look_pos = target_wpos
+			look_pos.y = actor.model.global_position.y
+			if actor.model.global_position.distance_squared_to(look_pos) > 0.001:
+				actor.model.look_at(look_pos, Vector3.UP, true)
+		)
 		tween.tween_property(actor.model, "position", local_target, 0.04)
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var axe = actor.model.get_node_or_null("AxeWeapon")
-			if axe:
-				var ap = axe.get_node_or_null("AnimationPlayer")
+			var r = actor.find_child("AxeWeaponRight", true, false)
+			var l = actor.find_child("AxeWeaponLeft", true, false)
+			if r:
+				var ap = r.get_node_or_null("AnimationPlayer")
 				if ap:
-					# Restart animation to make it rapid-fire on every single dash
+					ap.stop()
+					ap.play("Axe10_001Action")
+			if l:
+				var ap = l.get_node_or_null("AnimationPlayer")
+				if ap:
 					ap.stop()
 					ap.play("AtkAxe01")
 					
@@ -309,12 +320,23 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 		await grid_manager.move_actor(actor, step.x, step.y)
 		
 	# Arrived safely! Execute the attack on the target tile.
+	var target_wpos = grid_manager.get_world_position(target_x, target_z)
+	var look_pos = target_wpos
+	look_pos.y = actor.model.global_position.y
+	if actor.model.global_position.distance_squared_to(look_pos) > 0.001:
+		actor.model.look_at(look_pos, Vector3.UP, true)
+		
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	
 	# Play the axe swing animation
-	var axe = actor.model.get_node_or_null("AxeWeapon")
-	if axe:
-		var ap = axe.get_node_or_null("AnimationPlayer")
+	var r = actor.find_child("AxeWeaponRight", true, false)
+	var l = actor.find_child("AxeWeaponLeft", true, false)
+	if r:
+		var ap = r.get_node_or_null("AnimationPlayer")
+		if ap:
+			ap.play("Axe10_001Action")
+	if l:
+		var ap = l.get_node_or_null("AnimationPlayer")
 		if ap:
 			ap.play("AtkAxe01")
 			
@@ -571,39 +593,57 @@ func _create_actor(actor_name: String, actor_data: ActorData, color: Color) -> A
 	model.position.y = mesh.height / 2.0
 	
 	actor.add_child(model)
-	# Save a reference to the model so we can easily toggle its visibility later
 	actor.model = model 
 	
-	if actor_name == "Old Man":
-		# Load the .glb file directly to bypass any issues with the user's saved .tscn file
-		var axe_scene = load("res://resources/weapons/Low poly combat axes.glb")
+	if actor_name == "OldMan" or actor_name == "Old Man":
+		var axe_scene = load("res://scenes/low_poly_combat_axes.tscn")
+		if not axe_scene:
+			axe_scene = load("res://resources/weapons/Low poly combat axes.glb")
+			
 		if axe_scene:
-			print("SUCCESS: Axe GLB Loaded!")
-			var axe = axe_scene.instantiate()
-			axe.name = "AxeWeapon"
+			print("SUCCESS: Axe Loaded!")
 			
-			# Force visibility on all sub-meshes in case they were hidden in Blender
-			_force_visible(axe)
+			var pivot = Node3D.new()
+			pivot.name = "Pivot"
+			model.add_child(pivot)
 			
-			# Increase scale massively so it is undeniably visible
-			axe.scale = Vector3(10.0, 10.0, 10.0)
-			axe.position = Vector3(0, 2.0, 0) # Place it high above him so it doesn't clip into the floor
-			model.add_child(axe)
+			# Spawn Right Axe instance
+			var axe_right = axe_scene.instantiate()
+			axe_right.name = "AxeWeaponRight"
+			axe_right.scale = Vector3(1.5, 1.5, 1.5)
+			# They are already offset inside the GLB, so place root at ZERO
+			axe_right.position = Vector3.ZERO
+			axe_right.rotation.y = PI 
+			_hide_unwanted_meshes(axe_right, "Axe10_001")
+			pivot.add_child(axe_right)
 			
-			# Autoplay idle or attack to make sure the animation player resets the pose
-			var ap = axe.get_node_or_null("AnimationPlayer")
-			if ap:
-				ap.play("AtkAxe01")
+			# Spawn Left Axe instance
+			var axe_left = axe_scene.instantiate()
+			axe_left.name = "AxeWeaponLeft"
+			axe_left.scale = Vector3(1.5, 1.5, 1.5)
+			axe_left.position = Vector3.ZERO
+			axe_left.rotation.y = PI 
+			_hide_unwanted_meshes(axe_left, "Axe10_002")
+			pivot.add_child(axe_left)
+			
+			var apR = axe_right.get_node_or_null("AnimationPlayer")
+			if apR: apR.play("Axe10_001Action")
+			var apL = axe_left.get_node_or_null("AnimationPlayer")
+			if apL: apL.play("AtkAxe01")
+			
 		else:
-			print("ERROR: Could not load the Axe GLB!")
+			print("ERROR: Could not load the Axe scene or GLB!")
 			
 	return actor
 
-func _force_visible(node: Node) -> void:
-	if node is Node3D:
-		node.visible = true
+func _hide_unwanted_meshes(node: Node, target_mesh: String) -> void:
 	for child in node.get_children():
-		_force_visible(child)
+		if child is Node3D or child is VisualInstance3D:
+			if target_mesh in child.name or "Animation" in child.name:
+				child.visible = true
+			else:
+				child.visible = false
+		_hide_unwanted_meshes(child, target_mesh)
 
 ## Callback triggered when an actor's health reaches 0.
 func _on_actor_died(actor: Actor) -> void:
