@@ -22,9 +22,22 @@ var stacked_actors: Dictionary = {}
 var astar: AStarGrid2D
 
 ## Stores the MeshInstance3Ds for the visual grid so we can alter their colors to highlight ranges.
+
 var visual_cells: Dictionary = {}
 
+## Shared materials to preserve draw call batching
+var white_mat: StandardMaterial3D
+var black_mat: StandardMaterial3D
+var highlight_mat_cache: Dictionary = {}
+
+func _init() -> void:
+	white_mat = StandardMaterial3D.new()
+	white_mat.albedo_color = Color(0.8, 0.8, 0.8)
+	black_mat = StandardMaterial3D.new()
+	black_mat.albedo_color = Color(0.2, 0.2, 0.2)
+
 ## ⚡ Bolt Optimization: Tracks currently highlighted cells to avoid O(N) visual resets
+
 var _highlighted_cells: Array[Vector2i] = []
 
 ## Initializes the pathfinding system. Should be called after the node enters the tree.
@@ -288,11 +301,10 @@ func clear_highlights() -> void:
 	for pos in _highlighted_cells:
 		if visual_cells.has(pos):
 			var mesh = visual_cells[pos] as MeshInstance3D
-			var mat = mesh.material_override as StandardMaterial3D
 			if (pos.x + pos.y) % 2 == 0:
-				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
+				mesh.material_override = white_mat
 			else:
-				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+				mesh.material_override = black_mat
 	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
@@ -300,8 +312,11 @@ func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 	var pos = Vector2i(x, z)
 	if visual_cells.has(pos):
 		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		mat.albedo_color = color
+		if not highlight_mat_cache.has(color):
+			var new_mat = StandardMaterial3D.new()
+			new_mat.albedo_color = color
+			highlight_mat_cache[color] = new_mat
+		mesh.material_override = highlight_mat_cache[color]
 		# ⚡ Bolt Optimization: Track this cell for targeted reset later
 		if not _highlighted_cells.has(pos):
 			_highlighted_cells.append(pos)
