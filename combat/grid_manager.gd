@@ -12,6 +12,11 @@ const GRID_SIZE_Z: int = 12
 ## The physical size in Godot world units of a single grid cell.
 const CELL_SIZE: float = 2.0
 
+## Default shared materials for the checkerboard grid to optimize draw calls
+var default_white_mat: StandardMaterial3D
+var default_black_mat: StandardMaterial3D
+var _highlight_materials: Dictionary = {}
+
 ## Dictionary mapping logical coordinates `Vector2i(x, z)` to the `Actor` instance at that location.
 var grid: Dictionary = {}
 
@@ -288,20 +293,25 @@ func clear_highlights() -> void:
 	for pos in _highlighted_cells:
 		if visual_cells.has(pos):
 			var mesh = visual_cells[pos] as MeshInstance3D
-			var mat = mesh.material_override as StandardMaterial3D
 			if (pos.x + pos.y) % 2 == 0:
-				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
+				mesh.material_override = default_white_mat
 			else:
-				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+				mesh.material_override = default_black_mat
 	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
+func _get_highlight_material(color: Color) -> StandardMaterial3D:
+	if not _highlight_materials.has(color):
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = color
+		_highlight_materials[color] = mat
+	return _highlight_materials[color]
+
 func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 	var pos = Vector2i(x, z)
 	if visual_cells.has(pos):
 		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		mat.albedo_color = color
+		mesh.material_override = _get_highlight_material(color)
 		# ⚡ Bolt Optimization: Track this cell for targeted reset later
 		if not _highlighted_cells.has(pos):
 			_highlighted_cells.append(pos)
