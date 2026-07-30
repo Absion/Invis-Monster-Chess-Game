@@ -27,6 +27,12 @@ var visual_cells: Dictionary = {}
 ## ⚡ Bolt Optimization: Tracks currently highlighted cells to avoid O(N) visual resets
 var _highlighted_cells: Array[Vector2i] = []
 
+## ⚡ Bolt Optimization: Caches base materials to restore after highlights
+var _base_materials: Dictionary = {}
+
+## ⚡ Bolt Optimization: Caches generated highlight materials to prevent draw call batch breaking
+var _highlight_materials: Dictionary = {}
+
 ## Initializes the pathfinding system. Should be called after the node enters the tree.
 func setup() -> void:
 	print("GridManager initialized. Size: %dx%d" % [GRID_SIZE_X, GRID_SIZE_Z])
@@ -218,7 +224,9 @@ func get_world_position(x: int, z: int) -> Vector3:
 
 ## Links a logical grid coordinate to the physical 3D box mesh representing the floor tile.
 func register_visual_cell(x: int, z: int, mesh: MeshInstance3D) -> void:
-	visual_cells[Vector2i(x, z)] = mesh
+	var pos = Vector2i(x, z)
+	visual_cells[pos] = mesh
+	_base_materials[pos] = mesh.material_override
 
 ## Colors the floor tiles to indicate where the provided actor can attack.
 func highlight_attack_range(actor: Actor) -> void:
@@ -286,13 +294,10 @@ func highlight_attack_range(actor: Actor) -> void:
 func clear_highlights() -> void:
 	# ⚡ Bolt Optimization: Only reset cells that were actually highlighted
 	for pos in _highlighted_cells:
-		if visual_cells.has(pos):
+		if visual_cells.has(pos) and _base_materials.has(pos):
 			var mesh = visual_cells[pos] as MeshInstance3D
-			var mat = mesh.material_override as StandardMaterial3D
-			if (pos.x + pos.y) % 2 == 0:
-				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
-			else:
-				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+			# ⚡ Bolt Optimization: Restore the shared base material to maintain batching
+			mesh.material_override = _base_materials[pos]
 	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
@@ -300,8 +305,15 @@ func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 	var pos = Vector2i(x, z)
 	if visual_cells.has(pos):
 		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		mat.albedo_color = color
+
+		# ⚡ Bolt Optimization: Cache highlight materials and swap them instead of mutating albedo
+		if not _highlight_materials.has(color):
+			var new_mat = StandardMaterial3D.new()
+			new_mat.albedo_color = color
+			_highlight_materials[color] = new_mat
+
+		mesh.material_override = _highlight_materials[color]
+
 		# ⚡ Bolt Optimization: Track this cell for targeted reset later
 		if not _highlighted_cells.has(pos):
 			_highlighted_cells.append(pos)

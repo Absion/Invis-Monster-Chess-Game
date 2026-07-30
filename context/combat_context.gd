@@ -493,11 +493,11 @@ func _draw_visual_grid() -> void:
 		for z in range(GridManager.GRID_SIZE_Z):
 			var cell = MeshInstance3D.new()
 			cell.mesh = box_mesh
-			# Duplicate the material so we can tint individual cells later (highlighting)
+			# ⚡ Bolt Optimization: Shared materials prevent breaking draw call batching
 			if (x + z) % 2 == 0:
-				cell.material_override = white_mat.duplicate()
+				cell.material_override = white_mat
 			else:
-				cell.material_override = black_mat.duplicate()
+				cell.material_override = black_mat
 				
 			var pos = grid_manager.get_world_position(x, z)
 			pos.y = -0.05 # Sink the floor slightly so 0 is surface level
