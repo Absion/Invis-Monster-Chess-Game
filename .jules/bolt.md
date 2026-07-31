@@ -53,3 +53,6 @@
 ## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
 **Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
 **Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
+## 2026-06-27 - Material Duplication Breaks Draw Call Batching
+**Learning:** Duplicating materials (e.g., `mat.duplicate()`) for individual visual instances breaks the renderer's ability to batch draw calls. Modifying `.albedo_color` directly on these instances forces O(N) draw calls for the grid area, severely impacting performance.
+**Action:** Share base material instances globally among all identical components. Swap the `material_override` property to apply dynamic visual states, rather than duplicating the material and mutating `.albedo_color`. Use a lazily initialized dictionary cache to store standard materials for unique state colors (like dynamic highlights).
