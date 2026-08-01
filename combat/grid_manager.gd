@@ -234,6 +234,8 @@ func highlight_attack_range(actor: Actor) -> void:
 	# ⚡ Bolt Optimization: Extract monster obstacle clearing outside the loop
 	# Temporarily clear all monster obstacles once, instead of doing it inside get_naive_path for every cell
 	var monster_positions: Array[Vector2i] = []
+	# ⚡ Bolt Optimization: Cache girl position here to avoid O(N) lookup inside nested loop
+	var girl_pos := Vector2i(-1, -1)
 	# ⚡ Bolt Optimization: Iterate directly on the dictionary to avoid allocating an Array from .keys()
 	for pos in grid:
 		var grid_actor = grid[pos]
@@ -241,6 +243,8 @@ func highlight_attack_range(actor: Actor) -> void:
 			if astar.is_point_solid(pos):
 				astar.set_point_solid(pos, false)
 				monster_positions.append(pos)
+		elif grid_actor and grid_actor.get_actor_name() == "Little Girl":
+			girl_pos = pos
 
 	var start_was_solid = astar.is_point_solid(start)
 	if start_was_solid:
@@ -257,8 +261,8 @@ func highlight_attack_range(actor: Actor) -> void:
 			
 			if end == start: continue # Don't highlight own square
 			
-			var target_actor = get_actor_at(x, z)
-			if target_actor and target_actor.get_actor_name() == "Little Girl":
+			# ⚡ Bolt Optimization: Fast primitive comparison avoids allocating Vector2i and string lookups per cell
+			if end == girl_pos:
 				continue # Don't highlight friendly squares
 				
 			var end_was_solid = astar.is_point_solid(end)
