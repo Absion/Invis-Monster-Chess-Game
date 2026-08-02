@@ -24,6 +24,13 @@ var astar: AStarGrid2D
 ## Stores the MeshInstance3Ds for the visual grid so we can alter their colors to highlight ranges.
 var visual_cells: Dictionary = {}
 
+## Base default materials to reset the grid cells back to after highlighting.
+var default_white_mat: StandardMaterial3D
+var default_black_mat: StandardMaterial3D
+
+## Dictionary mapping Color -> StandardMaterial3D to cache and reuse highlight materials.
+var highlight_materials: Dictionary = {}
+
 ## ⚡ Bolt Optimization: Tracks currently highlighted cells to avoid O(N) visual resets
 var _highlighted_cells: Array[Vector2i] = []
 
@@ -288,11 +295,11 @@ func clear_highlights() -> void:
 	for pos in _highlighted_cells:
 		if visual_cells.has(pos):
 			var mesh = visual_cells[pos] as MeshInstance3D
-			var mat = mesh.material_override as StandardMaterial3D
+			# ⚡ Bolt Optimization: Swap material instance instead of mutating properties to preserve batching
 			if (pos.x + pos.y) % 2 == 0:
-				mat.albedo_color = Color(0.8, 0.8, 0.8) # Light grey
+				mesh.material_override = default_white_mat
 			else:
-				mat.albedo_color = Color(0.2, 0.2, 0.2) # Dark grey
+				mesh.material_override = default_black_mat
 	_highlighted_cells.clear()
 
 ## Internal helper to change the material color of a specific tile.
@@ -300,8 +307,15 @@ func _set_cell_highlight(x: int, z: int, color: Color) -> void:
 	var pos = Vector2i(x, z)
 	if visual_cells.has(pos):
 		var mesh = visual_cells[pos] as MeshInstance3D
-		var mat = mesh.material_override as StandardMaterial3D
-		mat.albedo_color = color
+
+		# ⚡ Bolt Optimization: Cache dynamic highlight materials by color and reuse them
+		if not highlight_materials.has(color):
+			var new_mat = StandardMaterial3D.new()
+			new_mat.albedo_color = color
+			highlight_materials[color] = new_mat
+
+		mesh.material_override = highlight_materials[color]
+
 		# ⚡ Bolt Optimization: Track this cell for targeted reset later
 		if not _highlighted_cells.has(pos):
 			_highlighted_cells.append(pos)
