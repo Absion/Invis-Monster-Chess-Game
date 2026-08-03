@@ -56,3 +56,6 @@
 ## 2026-06-27 - Object Property Access in Range Highlighting
 **Learning:** Checking for specific named actors (like the "Little Girl") inside a nested loop for grid highlighting ($O(R^2)$) by calling `get_actor_at()` and `.get_actor_name() == "Little Girl"` for every single cell is extremely inefficient. It redundantly allocates Vectors, queries dictionaries, and executes string comparisons.
 **Action:** When searching for a unique entity during a grid iteration, check if its position can be cached beforehand. In `highlight_attack_range`, since we already iterate over all actors to clear monster obstacles, cache the girl's `Vector2i` position then. Inside the hot loop, replace the function calls and string comparisons with a fast, primitive $O(1)$ check (`if end == girl_pos:`).
+## 2026-06-27 - Material Duplication & Draw Call Batching
+**Learning:** Duplicating `StandardMaterial3D` for every visual tile (`mat.duplicate()`) breaks Godot's renderer batching, causing 1 draw call per tile (e.g., $O(N)$ draw calls for the grid).
+**Action:** Share base materials (`white_mat`, `black_mat`) globally and apply dynamic highlights by swapping the `material_override` property instead of mutating individual material instances (`albedo_color`). Use a dictionary cache for dynamically generated highlight materials.
