@@ -81,6 +81,10 @@ func _process_single_monster(monster: Actor, target: Actor) -> void:
 	# Find the furthest valid cell along the path up to the monster's max movement range
 	# Find the furthest valid cell along the path up to the monster's max movement range
 	var move_target_index = 0
+
+	# ⚡ Bolt Optimization: Cache object properties into a primitive to avoid GDScript VM overhead and Vector2i allocations in loop
+	var target_pos = Vector2i(target.grid_x, target.grid_z)
+
 	for i in range(1, path.size()):
 		# Do not process steps that exceed the monster's permitted movement range
 		if i > max_movement:
@@ -89,7 +93,7 @@ func _process_single_monster(monster: Actor, target: Actor) -> void:
 		var check_pos = path[i]
 		
 		# Prevent moving into the exact cell occupied by the target
-		if check_pos == Vector2i(target.grid_x, target.grid_z):
+		if check_pos == target_pos:
 			break
 			
 		# Record the furthest walkable cell we encounter
