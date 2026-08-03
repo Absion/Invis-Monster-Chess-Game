@@ -486,6 +486,10 @@ func _draw_visual_grid() -> void:
 	var black_mat = StandardMaterial3D.new()
 	black_mat.albedo_color = Color(0.2, 0.2, 0.2)
 	
+	# ⚡ Bolt Optimization: Share these materials with the grid_manager so it can restore them without allocating new ones
+	grid_manager.white_mat = white_mat
+	grid_manager.black_mat = black_mat
+
 	var box_mesh = BoxMesh.new()
 	box_mesh.size = Vector3(GridManager.CELL_SIZE, 0.1, GridManager.CELL_SIZE)
 	
@@ -493,11 +497,12 @@ func _draw_visual_grid() -> void:
 		for z in range(GridManager.GRID_SIZE_Z):
 			var cell = MeshInstance3D.new()
 			cell.mesh = box_mesh
-			# Duplicate the material so we can tint individual cells later (highlighting)
+			# ⚡ Bolt Optimization: Removed material duplication to enable Godot renderer batching
+			# By sharing exact same material instance, Godot draws all matching tiles in 1 draw call instead of O(N).
 			if (x + z) % 2 == 0:
-				cell.material_override = white_mat.duplicate()
+				cell.material_override = white_mat
 			else:
-				cell.material_override = black_mat.duplicate()
+				cell.material_override = black_mat
 				
 			var pos = grid_manager.get_world_position(x, z)
 			pos.y = -0.05 # Sink the floor slightly so 0 is surface level

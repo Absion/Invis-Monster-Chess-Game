@@ -53,3 +53,6 @@
 ## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
 **Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
 **Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
+## 2026-06-27 - Material Duplication & Draw Call Batching
+**Learning:** Duplicating `StandardMaterial3D` for every visual tile (`mat.duplicate()`) breaks Godot's renderer batching, causing 1 draw call per tile (e.g., $O(N)$ draw calls for the grid).
+**Action:** Share base materials (`white_mat`, `black_mat`) globally and apply dynamic highlights by swapping the `material_override` property instead of mutating individual material instances (`albedo_color`). Use a dictionary cache for dynamically generated highlight materials.
