@@ -6,6 +6,8 @@ class_name Actor
 ## Actors rely on an [ActorData] resource for their base statistics.
 ## This class manages the actor's grid position, visuals, health, and smooth movement.
 
+#Git test
+
 ## Emitted when health reaches 0, signaling managers to clean up this actor.
 signal died(actor: Actor)
 
