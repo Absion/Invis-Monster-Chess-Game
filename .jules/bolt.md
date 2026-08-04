@@ -53,3 +53,9 @@
 ## 2026-06-27 - Absolute Zero-Allocation Dictionary Iteration
 **Learning:** While native methods like `dict.values()` avoid some GDScript VM overhead, they strictly allocate a new Array in C++ every single time they are called. Overriding manual iteration with `dict.values()` inside hot loops like `_process()` causes consistent GC pressure and frame drops.
 **Action:** Always replace `.values()` calls with zero-allocation dictionary key iteration (`for key in dict: var val = dict[key]`) to completely avoid these allocations. This completely supersedes previous assumptions that `.values()` is better.
+## 2026-06-27 - Object Property Access in Range Highlighting
+**Learning:** Checking for specific named actors (like the "Little Girl") inside a nested loop for grid highlighting ($O(R^2)$) by calling `get_actor_at()` and `.get_actor_name() == "Little Girl"` for every single cell is extremely inefficient. It redundantly allocates Vectors, queries dictionaries, and executes string comparisons.
+**Action:** When searching for a unique entity during a grid iteration, check if its position can be cached beforehand. In `highlight_attack_range`, since we already iterate over all actors to clear monster obstacles, cache the girl's `Vector2i` position then. Inside the hot loop, replace the function calls and string comparisons with a fast, primitive $O(1)$ check (`if end == girl_pos:`).
+## 2026-06-27 - Material Duplication & Draw Call Batching
+**Learning:** Duplicating `StandardMaterial3D` for every visual tile (`mat.duplicate()`) breaks Godot's renderer batching, causing 1 draw call per tile (e.g., $O(N)$ draw calls for the grid).
+**Action:** Share base materials (`white_mat`, `black_mat`) globally and apply dynamic highlights by swapping the `material_override` property instead of mutating individual material instances (`albedo_color`). Use a dictionary cache for dynamically generated highlight materials.
