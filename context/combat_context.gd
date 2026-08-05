@@ -221,6 +221,17 @@ func _handle_special_attack() -> void:
 	var original_pos = actor.model.position
 	var damage = actor.data.damage
 	
+	# ⚡ Bolt Optimization: Cache animation players before the loop to avoid O(N) recursive node lookups
+	var axe_right = actor.find_child("AxeWeaponRight", true, false)
+	var apR: AnimationPlayer = null
+	if axe_right:
+		apR = axe_right.get_node_or_null("AnimationPlayer")
+
+	var axe_left = actor.find_child("AxeWeaponLeft", true, false)
+	var apL: AnimationPlayer = null
+	if axe_left:
+		apL = axe_left.get_node_or_null("AnimationPlayer")
+
 	for dir in dirs:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
@@ -242,18 +253,13 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var r = actor.find_child("AxeWeaponRight", true, false)
-			var l = actor.find_child("AxeWeaponLeft", true, false)
-			if r:
-				var ap = r.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("Axe10_001Action")
-			if l:
-				var ap = l.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("AtkAxe01")
+			# ⚡ Bolt Optimization: Use cached AnimationPlayers directly
+			if apR:
+				apR.stop()
+				apR.play("Axe10_001Action")
+			if apL:
+				apL.stop()
+				apL.play("AtkAxe01")
 					
 			var target = grid_manager.get_actor_at(nx, nz)
 			if target and "Monster" in target.name:

@@ -59,3 +59,6 @@
 ## 2026-06-27 - Material Duplication & Draw Call Batching
 **Learning:** Duplicating `StandardMaterial3D` for every visual tile (`mat.duplicate()`) breaks Godot's renderer batching, causing 1 draw call per tile (e.g., $O(N)$ draw calls for the grid).
 **Action:** Share base materials (`white_mat`, `black_mat`) globally and apply dynamic highlights by swapping the `material_override` property instead of mutating individual material instances (`albedo_color`). Use a dictionary cache for dynamically generated highlight materials.
+## 2026-06-27 - Recursive Node Lookups in Loops and Tween Callbacks
+**Learning:** Performing recursive node lookups (e.g., `find_child()`) inside a tight loop or a tween callback triggered multiple times (like the 24 iterations in the AOE special attack) generates severe CPU spikes and jitter. It performs expensive string-based tree traversal redundantly when the target nodes haven't changed.
+**Action:** Always hoist recursive node lookups and component fetches (`find_child`, `get_node_or_null`) *outside* of loops and animation sequences. Cache the references to the nodes (like `AnimationPlayer`) beforehand and use those cached references directly inside callbacks or loops.
