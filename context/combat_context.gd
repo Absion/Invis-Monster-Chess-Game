@@ -221,6 +221,12 @@ func _handle_special_attack() -> void:
 	var original_pos = actor.model.position
 	var damage = actor.data.damage
 	
+	# ⚡ Bolt Optimization: Hoist recursive node lookups outside the loop and tween closures
+	var axe_r = actor.find_child("AxeWeaponRight", true, false)
+	var axe_l = actor.find_child("AxeWeaponLeft", true, false)
+	var ap_r = axe_r.get_node_or_null("AnimationPlayer") if axe_r else null
+	var ap_l = axe_l.get_node_or_null("AnimationPlayer") if axe_l else null
+
 	for dir in dirs:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
@@ -242,18 +248,12 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var r = actor.find_child("AxeWeaponRight", true, false)
-			var l = actor.find_child("AxeWeaponLeft", true, false)
-			if r:
-				var ap = r.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("Axe10_001Action")
-			if l:
-				var ap = l.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("AtkAxe01")
+			if ap_r:
+				ap_r.stop()
+				ap_r.play("Axe10_001Action")
+			if ap_l:
+				ap_l.stop()
+				ap_l.play("AtkAxe01")
 					
 			var target = grid_manager.get_actor_at(nx, nz)
 			if target and "Monster" in target.name:
