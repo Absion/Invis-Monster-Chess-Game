@@ -242,18 +242,12 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var r = actor.find_child("AxeWeaponRight", true, false)
-			var l = actor.find_child("AxeWeaponLeft", true, false)
-			if r:
-				var ap = r.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("Axe10_001Action")
-			if l:
-				var ap = l.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("AtkAxe01")
+			if actor.anim_right:
+				actor.anim_right.stop()
+				actor.anim_right.play("Axe10_001Action")
+			if actor.anim_left:
+				actor.anim_left.stop()
+				actor.anim_left.play("AtkAxe01")
 					
 			var target = grid_manager.get_actor_at(nx, nz)
 			if target and "Monster" in target.name:
@@ -331,16 +325,10 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	
 	# Play the axe swing animation
-	var r = actor.find_child("AxeWeaponRight", true, false)
-	var l = actor.find_child("AxeWeaponLeft", true, false)
-	if r:
-		var ap = r.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("Axe10_001Action")
-	if l:
-		var ap = l.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("AtkAxe01")
+	if actor.anim_right:
+		actor.anim_right.play("Axe10_001Action")
+	if actor.anim_left:
+		actor.anim_left.play("AtkAxe01")
 			
 	if target and "Monster" in target.name:
 		if hit_monsters_this_turn.has(target):
@@ -634,9 +622,13 @@ func _create_actor(actor_name: String, actor_data: ActorData, color: Color) -> A
 			pivot.add_child(axe_left)
 			
 			var apR = axe_right.get_node_or_null("AnimationPlayer")
-			if apR: apR.play("Axe10_001Action")
+			if apR:
+				apR.play("Axe10_001Action")
+				actor.anim_right = apR
 			var apL = axe_left.get_node_or_null("AnimationPlayer")
-			if apL: apL.play("AtkAxe01")
+			if apL:
+				apL.play("AtkAxe01")
+				actor.anim_left = apL
 			
 		else:
 			print("ERROR: Could not load the Axe scene or GLB!")
