@@ -23,6 +23,10 @@ var model: Node3D
 ## Current health pool of the actor.
 var current_health: int = 0
 
+## Cached AnimationPlayers for weapons to avoid recursive find_child calls
+var anim_right: AnimationPlayer
+var anim_left: AnimationPlayer
+
 ## Initializes the actor's health based on its resource data.
 func _ready() -> void:
 	# Ensure data is provided before setting up health
