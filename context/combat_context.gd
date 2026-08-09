@@ -221,6 +221,14 @@ func _handle_special_attack() -> void:
 	var original_pos = actor.model.position
 	var damage = actor.data.damage
 	
+	# ⚡ Bolt Optimization: Cache animation nodes outside the tween callback loop
+	var right_axe_ap: AnimationPlayer = null
+	var left_axe_ap: AnimationPlayer = null
+	var r = actor.find_child("AxeWeaponRight", true, false)
+	var l = actor.find_child("AxeWeaponLeft", true, false)
+	if r: right_axe_ap = r.get_node_or_null("AnimationPlayer")
+	if l: left_axe_ap = l.get_node_or_null("AnimationPlayer")
+
 	for dir in dirs:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
@@ -242,18 +250,12 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var r = actor.find_child("AxeWeaponRight", true, false)
-			var l = actor.find_child("AxeWeaponLeft", true, false)
-			if r:
-				var ap = r.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("Axe10_001Action")
-			if l:
-				var ap = l.get_node_or_null("AnimationPlayer")
-				if ap:
-					ap.stop()
-					ap.play("AtkAxe01")
+			if right_axe_ap:
+				right_axe_ap.stop()
+				right_axe_ap.play("Axe10_001Action")
+			if left_axe_ap:
+				left_axe_ap.stop()
+				left_axe_ap.play("AtkAxe01")
 					
 			var target = grid_manager.get_actor_at(nx, nz)
 			if target and "Monster" in target.name:
@@ -331,16 +333,19 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	
 	# Play the axe swing animation
+	# ⚡ Bolt Optimization: Removed redundant find_child since these only happen once here,
+	# but good practice for consistency
+	var right_axe_ap: AnimationPlayer = null
+	var left_axe_ap: AnimationPlayer = null
 	var r = actor.find_child("AxeWeaponRight", true, false)
 	var l = actor.find_child("AxeWeaponLeft", true, false)
-	if r:
-		var ap = r.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("Axe10_001Action")
-	if l:
-		var ap = l.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("AtkAxe01")
+	if r: right_axe_ap = r.get_node_or_null("AnimationPlayer")
+	if l: left_axe_ap = l.get_node_or_null("AnimationPlayer")
+
+	if right_axe_ap:
+		right_axe_ap.play("Axe10_001Action")
+	if left_axe_ap:
+		left_axe_ap.play("AtkAxe01")
 			
 	if target and "Monster" in target.name:
 		if hit_monsters_this_turn.has(target):
