@@ -20,6 +20,10 @@ var grid_z: int = 0
 ## The visual 3D model representing the actor.
 var model: Node3D
 
+# ⚡ Bolt Optimization: Cached weapon references to avoid O(N) recursive find_child lookups
+var weapon_right: Node3D
+var weapon_left: Node3D
+
 ## Current health pool of the actor.
 var current_health: int = 0
 

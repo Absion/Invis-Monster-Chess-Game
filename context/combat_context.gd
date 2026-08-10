@@ -242,8 +242,8 @@ func _handle_special_attack() -> void:
 		
 		# Apply damage at peak
 		tween.tween_callback(func():
-			var r = actor.find_child("AxeWeaponRight", true, false)
-			var l = actor.find_child("AxeWeaponLeft", true, false)
+			var r = actor.weapon_right
+			var l = actor.weapon_left
 			if r:
 				var ap = r.get_node_or_null("AnimationPlayer")
 				if ap:
@@ -331,8 +331,8 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	
 	# Play the axe swing animation
-	var r = actor.find_child("AxeWeaponRight", true, false)
-	var l = actor.find_child("AxeWeaponLeft", true, false)
+	var r = actor.weapon_right
+	var l = actor.weapon_left
 	if r:
 		var ap = r.get_node_or_null("AnimationPlayer")
 		if ap:
@@ -638,6 +638,10 @@ func _create_actor(actor_name: String, actor_data: ActorData, color: Color) -> A
 			var apL = axe_left.get_node_or_null("AnimationPlayer")
 			if apL: apL.play("AtkAxe01")
 			
+			# ⚡ Bolt Optimization: Populate the fast cache
+			actor.weapon_right = axe_right
+			actor.weapon_left = axe_left
+
 		else:
 			print("ERROR: Could not load the Axe scene or GLB!")
 			
