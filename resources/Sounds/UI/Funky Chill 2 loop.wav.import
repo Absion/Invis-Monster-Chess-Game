@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dx0uk11n28cga"
+path="res://.godot/imported/Funky Chill 2 loop.wav-769ea9fdba7276c02549536531868ce1.sample"
+
+[deps]
+
+source_file="res://resources/Sounds/UI/Funky Chill 2 loop.wav"
+dest_files=["res://.godot/imported/Funky Chill 2 loop.wav-769ea9fdba7276c02549536531868ce1.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

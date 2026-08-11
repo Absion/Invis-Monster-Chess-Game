@@ -61,6 +61,8 @@ func bind_services() -> void:
 
 ## Initializes the combat state, draws the grid, and spawns the actors.
 func setup() -> void:
+	if Global.has_method("play_combat_music"):
+		Global.play_combat_music()
 	grid_manager.setup()
 	turn_manager.setup()
 	monster_ai.setup(grid_manager, turn_manager)
@@ -201,6 +203,7 @@ func _handle_grid_click(x: int, z: int) -> void:
 		
 ## Executes the AOE Special Attack for the Old Man
 func _handle_special_attack() -> void:
+	if Global.has_method("play_special_attack"): Global.play_special_attack()
 	is_acting = true
 	combo_count = 0
 	combo_active = false
@@ -270,6 +273,7 @@ func _handle_special_attack() -> void:
 					t.tween_interval(0.5)
 					t.tween_callback(func(): if is_instance_valid(target) and is_instance_valid(target.model): target.model.visible = false)
 				target.take_damage(damage)
+				if Global.has_method("play_monster_wounded"): Global.play_monster_wounded()
 		)
 		
 		# Dash back
@@ -289,6 +293,7 @@ func _handle_heal() -> void:
 	var girl = _find_actor_by_name("Little Girl")
 	if girl and is_instance_valid(girl) and girl.current_health > 0:
 		can_heal = false
+		if Global.has_method("play_heal_sound"): Global.play_heal_sound()
 		girl.current_health = min(girl.current_health + 5, girl.data.max_health)
 		print("Little Girl healed for 5 HP! Current HP: ", girl.current_health)
 		
@@ -336,6 +341,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 		
 	var target = grid_manager.get_actor_at(target_x, target_z)
 	
+	if Global.has_method("play_old_man_attack"): Global.play_old_man_attack()
 	# Play the axe swing animation
 	var r = actor.find_child("AxeWeaponRight", true, false)
 	var l = actor.find_child("AxeWeaponLeft", true, false)
@@ -357,6 +363,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 
 		print("HIT! The Old Man struck a monster!")
 		target.take_damage(actor.data.damage)
+		if Global.has_method("play_monster_wounded"): Global.play_monster_wounded()
 		
 		# Reveal the monster temporarily so the player can see it get knocked back
 		if is_instance_valid(target) and is_instance_valid(target.model):
@@ -553,10 +560,17 @@ func _spawn_test_actors() -> void:
 		grid_manager.place_actor(girl, 1, 2)
 	
 	if monster_data:
+		var monster_count = 6
+		if Global.current_difficulty == Global.Difficulty.EASY:
+			monster_count = 4
+		elif Global.current_difficulty == Global.Difficulty.HARD:
+			monster_count = 10
+			
 		var colors = [Color.RED, Color.DARK_RED, Color.ORANGE, Color.YELLOW, Color.PURPLE, Color.BLUE]
 		var last_pos = Vector2i(1, 2)
-		for i in range(6):
-			var m = _create_actor("Monster" + str(i + 1), monster_data, colors[i])
+		for i in range(monster_count):
+			var color = colors[i % colors.size()]
+			var m = _create_actor("Monster" + str(i + 1), monster_data, color)
 			actors_node.add_child(m)
 			var pos = _get_random_spawn(last_pos.x, last_pos.y, 5 if i > 0 else 6)
 			var fallback = 0
@@ -690,6 +704,11 @@ func _end_game(is_win: bool) -> void:
 	is_acting = true # Block player input
 	turn_manager.process_mode = Node.PROCESS_MODE_DISABLED # Pause turns
 	
+	if is_win:
+		if Global.has_method("play_win_sound"): Global.play_win_sound()
+	else:
+		if Global.has_method("play_lose_sound"): Global.play_lose_sound()
+	
 	if combat_ui and combat_ui.end_turn_button:
 		combat_ui.end_turn_button.disabled = true
 		combat_ui.end_turn_button.release_focus()
@@ -702,21 +721,46 @@ func _end_game(is_win: bool) -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	canvas.add_child(bg)
 	
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_preset(Control.PRESET_CENTER)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	canvas.add_child(vbox)
+	
 	var label = Label.new()
 	label.text = "YOU WIN!" if is_win else "YOU LOSE!"
-	label.set_anchors_preset(Control.PRESET_CENTER)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 120)
 	label.add_theme_color_override("font_color", Color.GREEN if is_win else Color.RED)
-	
-	# Add a slight shadow for readability
 	label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	label.add_theme_constant_override("shadow_offset_x", 4)
 	label.add_theme_constant_override("shadow_offset_y", 4)
+	vbox.add_child(label)
 	
-	canvas.add_child(label)
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 30)
+	vbox.add_child(hbox)
 	
-	# Ensure the timer is processed even if other things are disabled
-	await get_tree().create_timer(3.0, true, false, true).timeout
-	get_tree().call_deferred("reload_current_scene")
+	var btn_continue = Button.new()
+	btn_continue.text = "Play Again" if is_win else "Continue"
+	btn_continue.add_theme_font_size_override("font_size", 32)
+	btn_continue.custom_minimum_size = Vector2(250, 60)
+	btn_continue.pressed.connect(func():
+		if Global.has_method("play_button_sound"):
+			Global.play_button_sound()
+		get_tree().call_deferred("reload_current_scene")
+	)
+	hbox.add_child(btn_continue)
+		
+	var btn_menu = Button.new()
+	btn_menu.text = "Main Menu"
+	btn_menu.add_theme_font_size_override("font_size", 32)
+	btn_menu.custom_minimum_size = Vector2(250, 60)
+	btn_menu.pressed.connect(func():
+		if Global.has_method("play_button_sound"):
+			Global.play_button_sound()
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	)
+	hbox.add_child(btn_menu)

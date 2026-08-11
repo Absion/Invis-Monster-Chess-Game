@@ -151,7 +151,15 @@ func _process(_delta: float) -> void:
 			monster_hps[actor.name] = str(actor.current_health) + "/" + str(actor.data.max_health)
 			
 	var text = "Health Status\n------------------\nLittle Girl: " + girl_hp
-	for i in range(1, 7):
+	
+	var max_monster = 0
+	for m_name in _last_hp_state.keys():
+		if m_name.begins_with("Monster"):
+			var num = m_name.replace("Monster", "").to_int()
+			if num > max_monster:
+				max_monster = num
+				
+	for i in range(1, max_monster + 1):
 		var m_name = "Monster" + str(i)
 		var hp = monster_hps.get(m_name, "Dead")
 		text += "\nMonster " + str(i) + ": " + hp

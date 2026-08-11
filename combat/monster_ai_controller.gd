@@ -113,4 +113,5 @@ func _process_single_monster(monster: Actor, target: Actor) -> void:
 		
 	var distance = abs(monster.grid_x - target.grid_x) + abs(monster.grid_z - target.grid_z)
 	if distance == 1:
+		if Global.has_method("play_monster_attack"): Global.play_monster_attack()
 		target.take_damage(monster.data.damage)

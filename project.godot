@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="Invis Monster Chess Game"
-run/main_scene="res://scenes/combat_test.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
+
+[autoload]
+
+Global="*res://context/global_context.gd"
 
 [display]
 

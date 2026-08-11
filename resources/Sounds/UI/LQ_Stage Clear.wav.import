@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://12inn3amywaa"
+path="res://.godot/imported/LQ_Stage Clear.wav-441bc5f3a1bfb1f3479f15586cc97d5b.sample"
+
+[deps]
+
+source_file="res://resources/Sounds/UI/LQ_Stage Clear.wav"
+dest_files=["res://.godot/imported/LQ_Stage Clear.wav-441bc5f3a1bfb1f3479f15586cc97d5b.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

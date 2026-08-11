@@ -1,0 +1,137 @@
+[gd_scene load_steps=2 format=3 uid="uid://main_menu_random_uid"]
+
+[ext_resource type="Script" path="res://scenes/main_menu.gd" id="1_script"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.12, 1)
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 80.0
+offset_bottom = 160.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 64
+text = "Invisible Monster Chess Game"
+horizontal_alignment = 1
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="StartButton" type="Button" parent="CenterContainer/MainVBox"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Start Game"
+
+[node name="SettingsButton" type="Button" parent="CenterContainer/MainVBox"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Settings"
+
+[node name="SettingsVBox" type="VBoxContainer" parent="CenterContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="SettingsTitle" type="Label" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="MusicVolLabel" type="Label" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+text = "Music Volume"
+horizontal_alignment = 1
+
+[node name="MusicSlider" type="HSlider" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="SFXVolLabel" type="Label" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+text = "SFX Volume"
+horizontal_alignment = 1
+
+[node name="SFXSlider" type="HSlider" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="DifficultyLabel" type="Label" parent="CenterContainer/SettingsVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+text = "Current: Normal"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="EasyButton" type="Button" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Easy"
+
+[node name="NormalButton" type="Button" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Normal"
+
+[node name="HardButton" type="Button" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Hard"
+
+[node name="Spacer2" type="Control" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="CenterContainer/SettingsVBox"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Back"
+
+[connection signal="pressed" from="CenterContainer/MainVBox/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="CenterContainer/MainVBox/SettingsButton" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="CenterContainer/SettingsVBox/EasyButton" to="." method="_on_easy_button_pressed"]
+[connection signal="pressed" from="CenterContainer/SettingsVBox/NormalButton" to="." method="_on_normal_button_pressed"]
+[connection signal="pressed" from="CenterContainer/SettingsVBox/HardButton" to="." method="_on_hard_button_pressed"]
+[connection signal="pressed" from="CenterContainer/SettingsVBox/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="value_changed" from="CenterContainer/SettingsVBox/MusicSlider" to="." method="_on_music_slider_changed"]
+[connection signal="value_changed" from="CenterContainer/SettingsVBox/SFXSlider" to="." method="_on_sfx_slider_changed"]
