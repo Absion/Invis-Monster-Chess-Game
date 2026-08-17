@@ -224,16 +224,9 @@ func _handle_special_attack() -> void:
 	var original_pos = actor.model.position
 	var damage = actor.data.damage
 	
-	# ⚡ Bolt Optimization: Cache animation players before the loop to avoid O(N) recursive node lookups
-	var axe_right = actor.find_child("AxeWeaponRight", true, false)
-	var apR: AnimationPlayer = null
-	if axe_right:
-		apR = axe_right.get_node_or_null("AnimationPlayer")
-
-	var axe_left = actor.find_child("AxeWeaponLeft", true, false)
-	var apL: AnimationPlayer = null
-	if axe_left:
-		apL = axe_left.get_node_or_null("AnimationPlayer")
+	# ⚡ Bolt Optimization: Utilize cached animation players to avoid O(N) recursive node lookups
+	var apR: AnimationPlayer = actor.axe_right_ap
+	var apL: AnimationPlayer = actor.axe_left_ap
 
 	for dir in dirs:
 		var nx = actor.grid_x + dir.x
@@ -343,16 +336,11 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 	
 	if Global.has_method("play_old_man_attack"): Global.play_old_man_attack()
 	# Play the axe swing animation
-	var r = actor.find_child("AxeWeaponRight", true, false)
-	var l = actor.find_child("AxeWeaponLeft", true, false)
-	if r:
-		var ap = r.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("Axe10_001Action")
-	if l:
-		var ap = l.get_node_or_null("AnimationPlayer")
-		if ap:
-			ap.play("AtkAxe01")
+	# ⚡ Bolt Optimization: Utilize cached animation players to avoid recursive node lookups
+	if actor.axe_right_ap:
+		actor.axe_right_ap.play("Axe10_001Action")
+	if actor.axe_left_ap:
+		actor.axe_left_ap.play("AtkAxe01")
 			
 	if target and "Monster" in target.name:
 		if hit_monsters_this_turn.has(target):
@@ -654,9 +642,13 @@ func _create_actor(actor_name: String, actor_data: ActorData, color: Color) -> A
 			pivot.add_child(axe_left)
 			
 			var apR = axe_right.get_node_or_null("AnimationPlayer")
-			if apR: apR.play("Axe10_001Action")
+			if apR:
+				apR.play("Axe10_001Action")
+				actor.axe_right_ap = apR
 			var apL = axe_left.get_node_or_null("AnimationPlayer")
-			if apL: apL.play("AtkAxe01")
+			if apL:
+				apL.play("AtkAxe01")
+				actor.axe_left_ap = apL
 			
 		else:
 			print("ERROR: Could not load the Axe scene or GLB!")

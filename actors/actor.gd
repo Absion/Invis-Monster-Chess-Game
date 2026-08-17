@@ -20,6 +20,10 @@ var grid_z: int = 0
 ## The visual 3D model representing the actor.
 var model: Node3D
 
+# ⚡ Bolt Optimization: Cached references to weapon animation players
+var axe_right_ap: AnimationPlayer
+var axe_left_ap: AnimationPlayer
+
 ## Current health pool of the actor.
 var current_health: int = 0
 
