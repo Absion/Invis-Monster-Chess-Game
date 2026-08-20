@@ -153,7 +153,8 @@ func _process(_delta: float) -> void:
 	var text = "Health Status\n------------------\nLittle Girl: " + girl_hp
 	
 	var max_monster = 0
-	for m_name in _last_hp_state.keys():
+	# ⚡ Bolt Optimization: Iterate directly on keys to avoid .keys() Array allocation
+	for m_name in _last_hp_state:
 		if m_name.begins_with("Monster"):
 			var num = m_name.replace("Monster", "").to_int()
 			if num > max_monster:
