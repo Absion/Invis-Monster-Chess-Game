@@ -37,6 +37,8 @@ var hover_indicator: MeshInstance3D
 
 # ⚡ Bolt Optimization: Cache hovered cell to prevent O(1) rendering tree updates on mouse motion
 var _last_hovered_cell: Vector2i = Vector2i(-1, -1)
+# ⚡ Bolt Optimization: Cache camera reference to prevent O(N) recursive tree updates on mouse motion
+var _cached_camera: Camera3D
 
 ## Builds and registers the child Service nodes required for Combat.
 func build_services() -> void:
@@ -135,7 +137,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 		
 	if event is InputEventMouseMotion or (event is InputEventMouseButton and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT) and event.pressed):
-		var camera = get_viewport().get_camera_3d()
+		if not is_instance_valid(_cached_camera):
+			_cached_camera = get_viewport().get_camera_3d()
+		var camera = _cached_camera
 		if not camera: return
 		
 		var mouse_pos = event.position
@@ -472,7 +476,9 @@ func _show_stun_feedback(actor: Actor) -> void:
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
 	
-	var camera = get_viewport().get_camera_3d()
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d()
+	var camera = _cached_camera
 	if camera and camera.get_parent() and camera.get_parent().get_parent() is GimbalCamera:
 		camera.get_parent().get_parent().shake(1.0, 0.4)
 

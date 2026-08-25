@@ -65,3 +65,7 @@
 ## 2026-06-27 - Recursive Node Lookups (find_child) on Component/Actor Spawns
 **Learning:** Re-running `find_child()` frequently within a high-traffic area, like an attack tween sequence or loop, causes measurable CPU spikes due to string-based recursive tree traversal. When dealing with assets spawned during `_create_actor` (like `AnimationPlayer` within the Old Man's weapon GLBs), fetching them dynamically during combat is a massive anti-pattern.
 **Action:** When spawning external scenes or models (e.g., inside `_create_actor`), instantly cache core node references (like `AnimationPlayer`) onto strongly-typed instance properties (`var axe_right_ap`) on the `Actor` instance. Replace all dynamic `find_child` lookups in the core loops with these $O(1)$ property accesses.
+
+## 2026-08-25 - Caching Godot Camera Reference on Input Events
+**Learning:** Calling `get_viewport().get_camera_3d()` inside high-frequency input handlers (like `_unhandled_input` checking `InputEventMouseMotion`) is surprisingly expensive because it performs a recursive traversal of the scene tree looking for the active camera. This introduces unnecessary O(N) overhead on every mouse tick.
+**Action:** Always cache the camera reference in a class variable (`_cached_camera`) and check `is_instance_valid(_cached_camera)` before reusing it, rather than retrieving it dynamically inside `_process` or `_unhandled_input`.
