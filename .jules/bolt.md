@@ -65,3 +65,6 @@
 ## 2026-06-27 - Recursive Node Lookups (find_child) on Component/Actor Spawns
 **Learning:** Re-running `find_child()` frequently within a high-traffic area, like an attack tween sequence or loop, causes measurable CPU spikes due to string-based recursive tree traversal. When dealing with assets spawned during `_create_actor` (like `AnimationPlayer` within the Old Man's weapon GLBs), fetching them dynamically during combat is a massive anti-pattern.
 **Action:** When spawning external scenes or models (e.g., inside `_create_actor`), instantly cache core node references (like `AnimationPlayer`) onto strongly-typed instance properties (`var axe_right_ap`) on the `Actor` instance. Replace all dynamic `find_child` lookups in the core loops with these $O(1)$ property accesses.
+## 2026-06-27 - Dictionary Keys Allocation in _process
+**Learning:** Just like `dict.values()`, calling `.keys()` on a Godot Dictionary allocates a new Array containing all the keys. Calling this every frame in `_process()` for UI updates creates constant memory allocation overhead and triggers the garbage collector needlessly.
+**Action:** Always iterate directly over the dictionary (`for key in dict:`) instead of calling `.keys()` (`for key in dict.keys():`) to prevent array allocations, especially in high-frequency loops like `_process()`.
