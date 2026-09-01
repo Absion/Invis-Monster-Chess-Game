@@ -65,3 +65,6 @@
 ## 2026-06-27 - Recursive Node Lookups (find_child) on Component/Actor Spawns
 **Learning:** Re-running `find_child()` frequently within a high-traffic area, like an attack tween sequence or loop, causes measurable CPU spikes due to string-based recursive tree traversal. When dealing with assets spawned during `_create_actor` (like `AnimationPlayer` within the Old Man's weapon GLBs), fetching them dynamically during combat is a massive anti-pattern.
 **Action:** When spawning external scenes or models (e.g., inside `_create_actor`), instantly cache core node references (like `AnimationPlayer`) onto strongly-typed instance properties (`var axe_right_ap`) on the `Actor` instance. Replace all dynamic `find_child` lookups in the core loops with these $O(1)$ property accesses.
+## 2026-06-27 - Recursive Camera Lookup Overhead in Mouse Events
+**Learning:** Calling `get_viewport().get_camera_3d()` repeatedly inside high-frequency input handlers like `_input(event)` during `InputEventMouseMotion` generates significant overhead. The method performs a recursive tree search to locate the active camera every time the mouse moves (up to 1000Hz with gaming mice).
+**Action:** Cache the camera reference on first access or during initialization via a getter method, and use the cached reference in input processing logic to avoid redundant O(N) recursive tree traversals.
