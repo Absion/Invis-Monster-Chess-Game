@@ -59,14 +59,6 @@ func build_services() -> void:
 func bind_services() -> void:
 	pass
 
-# ⚡ Bolt Optimization: Cache camera reference to prevent expensive recursive lookups during mouse motion
-var _cached_camera: Camera3D
-
-func _get_camera() -> Camera3D:
-	if not is_instance_valid(_cached_camera):
-		_cached_camera = get_viewport().get_camera_3d()
-	return _cached_camera
-
 ## Initializes the combat state, draws the grid, and spawns the actors.
 func setup() -> void:
 	if Global.has_method("play_combat_music"):
@@ -143,7 +135,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 		
 	if event is InputEventMouseMotion or (event is InputEventMouseButton and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT) and event.pressed):
-		var camera = _get_camera()
+		var camera = get_viewport().get_camera_3d()
 		if not camera: return
 		
 		var mouse_pos = event.position
@@ -480,7 +472,7 @@ func _show_stun_feedback(actor: Actor) -> void:
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
 	
-	var camera = _get_camera()
+	var camera = get_viewport().get_camera_3d()
 	if camera and camera.get_parent() and camera.get_parent().get_parent() is GimbalCamera:
 		camera.get_parent().get_parent().shake(1.0, 0.4)
 
