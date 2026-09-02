@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dqtrynvqqqu5d"
-path.s3tc="res://.godot/imported/Ash temp model_Image_0.png-766fb6d20684630248157bd4c7be0bef.s3tc.ctex"
+uid="uid://c7jbaiyny5u88"
+path.s3tc="res://.godot/imported/Ash temp model2_Image_0.png-f17d77b5a39919402171071f4fc6f41e.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -14,8 +14,8 @@ generator_parameters={
 
 [deps]
 
-source_file="res://resources/Characters/Ash/Ash temp model_Image_0.png"
-dest_files=["res://.godot/imported/Ash temp model_Image_0.png-766fb6d20684630248157bd4c7be0bef.s3tc.ctex"]
+source_file="res://resources/Characters/Ash/Ash temp model2_Image_0.png"
+dest_files=["res://.godot/imported/Ash temp model2_Image_0.png-f17d77b5a39919402171071f4fc6f41e.s3tc.ctex"]
 
 [params]
 

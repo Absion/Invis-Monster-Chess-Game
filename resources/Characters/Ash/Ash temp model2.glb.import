@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://4feipm70tsql"
-path="res://.godot/imported/Ash temp model.glb-a8a7ff75bea0d58e0dbeaa1c50311162.scn"
+uid="uid://ckkc2xvgk4xig"
+path="res://.godot/imported/Ash temp model2.glb-250e6aa771d791fe73834442ba1deef7.scn"
 
 [deps]
 
-source_file="res://resources/Characters/Ash/Ash temp model.glb"
-dest_files=["res://.godot/imported/Ash temp model.glb-a8a7ff75bea0d58e0dbeaa1c50311162.scn"]
+source_file="res://resources/Characters/Ash/Ash temp model2.glb"
+dest_files=["res://.godot/imported/Ash temp model2.glb-250e6aa771d791fe73834442ba1deef7.scn"]
 
 [params]
 
