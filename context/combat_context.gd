@@ -59,13 +59,8 @@ func build_services() -> void:
 func bind_services() -> void:
 	pass
 
-# ⚡ Bolt Optimization: Cache camera reference to prevent expensive recursive lookups during mouse motion
-var _cached_camera: Camera3D
-
 func _get_camera() -> Camera3D:
-	if not is_instance_valid(_cached_camera):
-		_cached_camera = get_viewport().get_camera_3d()
-	return _cached_camera
+	return get_viewport().get_camera_3d()
 
 ## Initializes the combat state, draws the grid, and spawns the actors.
 func setup() -> void:

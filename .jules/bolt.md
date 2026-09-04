@@ -68,3 +68,7 @@
 ## 2026-06-27 - Recursive Camera Lookup Overhead in Mouse Events
 **Learning:** Calling `get_viewport().get_camera_3d()` repeatedly inside high-frequency input handlers like `_input(event)` during `InputEventMouseMotion` generates significant overhead. The method performs a recursive tree search to locate the active camera every time the mouse moves (up to 1000Hz with gaming mice).
 **Action:** Cache the camera reference on first access or during initialization via a getter method, and use the cached reference in input processing logic to avoid redundant O(N) recursive tree traversals.
+
+## 2026-06-27 - Viewport get_camera_3d Overhead Misconception
+**Learning:** In Godot, the `Viewport` class already caches its active 3D camera internally, making `get_camera_3d()` an O(1) getter. My previous assumption that it performs a recursive tree search every time it is called was incorrect. Manually caching it in GDScript provides zero performance benefit, adds the overhead of `is_instance_valid` checks, and can introduce state bugs if the active camera changes.
+**Action:** Do not manually cache `get_viewport().get_camera_3d()`. Use it directly.
