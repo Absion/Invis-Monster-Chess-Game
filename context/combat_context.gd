@@ -32,6 +32,15 @@ var combo_active: bool = false
 var hit_monsters_this_turn: Array[Actor] = []
 var can_heal: bool = true
 
+# ⚡ Bolt Optimization: Pre-calculate special attack directions to avoid array allocations at runtime
+const SPECIAL_ATTACK_DIRS: Array[Vector2i] = [
+	Vector2i(-2, -2), Vector2i(-2, -1), Vector2i(-2, 0), Vector2i(-2, 1), Vector2i(-2, 2),
+	Vector2i(-1, -2), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(-1, 2),
+	Vector2i(0, -2), Vector2i(0, -1), Vector2i(0, 1), Vector2i(0, 2),
+	Vector2i(1, -2), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1), Vector2i(1, 2),
+	Vector2i(2, -2), Vector2i(2, -1), Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2)
+]
+
 ## Visual mesh that hovers over valid target squares
 var hover_indicator: MeshInstance3D
 
@@ -221,12 +230,6 @@ func _handle_special_attack() -> void:
 	print("SPECIAL AOE ATTACK ACTIVATED!")
 	
 	var actor = active_actor
-	var dirs = []
-	for dx in range(-2, 3):
-		for dz in range(-2, 3):
-			if dx == 0 and dz == 0:
-				continue
-			dirs.append(Vector2i(dx, dz))
 	
 	var tween = actor.create_tween()
 	var original_pos = actor.model.position
@@ -236,7 +239,8 @@ func _handle_special_attack() -> void:
 	var apR: AnimationPlayer = actor.axe_right_ap
 	var apL: AnimationPlayer = actor.axe_left_ap
 
-	for dir in dirs:
+	# ⚡ Bolt Optimization: Use the pre-calculated constant array instead of a dynamically built one
+	for dir in SPECIAL_ATTACK_DIRS:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
 		if not grid_manager.is_in_bounds(nx, nz):
