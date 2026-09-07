@@ -1,6 +1,14 @@
 extends Context
 class_name CombatContext
 
+const AOE_DIRS: Array[Vector2i] = [
+	Vector2i(-2, -2), Vector2i(-2, -1), Vector2i(-2, 0), Vector2i(-2, 1), Vector2i(-2, 2),
+	Vector2i(-1, -2), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(-1, 2),
+	Vector2i(0, -2), Vector2i(0, -1), Vector2i(0, 1), Vector2i(0, 2),
+	Vector2i(1, -2), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1), Vector2i(1, 2),
+	Vector2i(2, -2), Vector2i(2, -1), Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2)
+]
+
 ## The Context managing the combat game state.
 ##
 ## Manages Turn Order, grid logic, and handles player mouse interactions
@@ -221,12 +229,8 @@ func _handle_special_attack() -> void:
 	print("SPECIAL AOE ATTACK ACTIVATED!")
 	
 	var actor = active_actor
-	var dirs = []
-	for dx in range(-2, 3):
-		for dz in range(-2, 3):
-			if dx == 0 and dz == 0:
-				continue
-			dirs.append(Vector2i(dx, dz))
+	# ⚡ Bolt Optimization: Use precalculated constant array to avoid GC overhead and loop execution
+	var dirs = AOE_DIRS
 	
 	var tween = actor.create_tween()
 	var original_pos = actor.model.position
