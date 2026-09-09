@@ -68,3 +68,7 @@
 ## 2026-06-27 - Recursive Camera Lookup Overhead in Mouse Events
 **Learning:** Calling `get_viewport().get_camera_3d()` repeatedly inside high-frequency input handlers like `_input(event)` during `InputEventMouseMotion` generates significant overhead. The method performs a recursive tree search to locate the active camera every time the mouse moves (up to 1000Hz with gaming mice).
 **Action:** Cache the camera reference on first access or during initialization via a getter method, and use the cached reference in input processing logic to avoid redundant O(N) recursive tree traversals.
+
+## 2026-06-27 - Fixed Structure Allocation Overhead
+**Learning:** Dynamically allocating and calculating arrays of fixed values (e.g., relative grid coordinate offsets for AOE attacks) within methods at runtime causes unnecessary CPU and GC overhead.
+**Action:** Pre-calculate these fixed structures and store them in a `const` Array at the class level to avoid recreating them every time the logic executes.

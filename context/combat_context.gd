@@ -6,6 +6,15 @@ class_name CombatContext
 ## Manages Turn Order, grid logic, and handles player mouse interactions
 ## via math-based raycasting. Connects the UI to the underlying services.
 
+# ⚡ Bolt Optimization: Pre-calculate fixed relative coordinate offsets to avoid runtime array allocation overhead
+const AOE_DIRS: Array[Vector2i] = [
+	Vector2i(-2, -2), Vector2i(-2, -1), Vector2i(-2, 0), Vector2i(-2, 1), Vector2i(-2, 2),
+	Vector2i(-1, -2), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(-1, 2),
+	Vector2i(0, -2), Vector2i(0, -1), Vector2i(0, 1), Vector2i(0, 2),
+	Vector2i(1, -2), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1), Vector2i(1, 2),
+	Vector2i(2, -2), Vector2i(2, -1), Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2)
+]
+
 @export var old_man_data: ActorData
 @export var girl_data: ActorData
 @export var monster_data: ActorData
@@ -221,12 +230,6 @@ func _handle_special_attack() -> void:
 	print("SPECIAL AOE ATTACK ACTIVATED!")
 	
 	var actor = active_actor
-	var dirs = []
-	for dx in range(-2, 3):
-		for dz in range(-2, 3):
-			if dx == 0 and dz == 0:
-				continue
-			dirs.append(Vector2i(dx, dz))
 	
 	var tween = actor.create_tween()
 	var original_pos = actor.model.position
@@ -236,7 +239,8 @@ func _handle_special_attack() -> void:
 	var apR: AnimationPlayer = actor.axe_right_ap
 	var apL: AnimationPlayer = actor.axe_left_ap
 
-	for dir in dirs:
+	# ⚡ Bolt Optimization: Use pre-calculated array of fixed offsets
+	for dir in AOE_DIRS:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
 		if not grid_manager.is_in_bounds(nx, nz):
