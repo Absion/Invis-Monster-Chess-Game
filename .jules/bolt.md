@@ -68,3 +68,6 @@
 ## 2026-06-27 - Recursive Camera Lookup Overhead in Mouse Events
 **Learning:** Calling `get_viewport().get_camera_3d()` repeatedly inside high-frequency input handlers like `_input(event)` during `InputEventMouseMotion` generates significant overhead. The method performs a recursive tree search to locate the active camera every time the mouse moves (up to 1000Hz with gaming mice).
 **Action:** Cache the camera reference on first access or during initialization via a getter method, and use the cached reference in input processing logic to avoid redundant O(N) recursive tree traversals.
+## 2026-06-27 - Dynamic Array Calculation of Static Values
+**Learning:** Dynamically generating fixed arrays in memory, such as a coordinate offsets map during an AOE attack logic routine via nested loops, introduces completely unnecessary CPU cycles and memory allocations inside Godot.
+**Action:** When working with fixed spatial offsets (like AOE patterns), calculate them once and store them as a `const Array[Vector2i]` rather than using dynamic loops each time the function executes.
