@@ -38,6 +38,16 @@ var hover_indicator: MeshInstance3D
 # ⚡ Bolt Optimization: Cache hovered cell to prevent O(1) rendering tree updates on mouse motion
 var _last_hovered_cell: Vector2i = Vector2i(-1, -1)
 
+# ⚡ Bolt Optimization: Pre-calculate fixed relative coordinate offsets for AOE attacks and knockbacks
+const AOE_DIRS: Array[Vector2i] = [
+	Vector2i(-2, -2), Vector2i(-2, -1), Vector2i(-2, 0), Vector2i(-2, 1), Vector2i(-2, 2),
+	Vector2i(-1, -2), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(-1, 2),
+	Vector2i(0, -2), Vector2i(0, -1), Vector2i(0, 1), Vector2i(0, 2),
+	Vector2i(1, -2), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1), Vector2i(1, 2),
+	Vector2i(2, -2), Vector2i(2, -1), Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2)
+]
+const KNOCKBACK_DIRS: Array[Vector2i] = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+
 ## Builds and registers the child Service nodes required for Combat.
 func build_services() -> void:
 	grid_manager = GridManager.new()
@@ -221,12 +231,6 @@ func _handle_special_attack() -> void:
 	print("SPECIAL AOE ATTACK ACTIVATED!")
 	
 	var actor = active_actor
-	var dirs = []
-	for dx in range(-2, 3):
-		for dz in range(-2, 3):
-			if dx == 0 and dz == 0:
-				continue
-			dirs.append(Vector2i(dx, dz))
 	
 	var tween = actor.create_tween()
 	var original_pos = actor.model.position
@@ -236,7 +240,7 @@ func _handle_special_attack() -> void:
 	var apR: AnimationPlayer = actor.axe_right_ap
 	var apL: AnimationPlayer = actor.axe_left_ap
 
-	for dir in dirs:
+	for dir in AOE_DIRS:
 		var nx = actor.grid_x + dir.x
 		var nz = actor.grid_z + dir.y
 		if not grid_manager.is_in_bounds(nx, nz):
@@ -378,7 +382,7 @@ func _execute_blind_attack(actor: Actor, target_x: int, target_z: int) -> void:
 				var gz = girl.grid_z
 				var current_dist = abs(mx - gx) + abs(mz - gz)
 				var candidates = []
-				for dir in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]:
+				for dir in KNOCKBACK_DIRS:
 					var nx = mx + dir.x
 					var nz = mz + dir.y
 					if grid_manager.is_cell_walkable(nx, nz):
