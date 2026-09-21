@@ -2,17 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0l3blw51w7b2"
-path.s3tc="res://.godot/imported/MAP060_16.png-871d13ca85173601dd36e46c0deffc34.s3tc.ctex"
+uid="uid://bbswtq67p2quq"
+path.s3tc="res://.godot/imported/Untitled_MAP060_1.png-5259f37144af6a953441afe8755c042f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
+generator_parameters={
+"md5": "5d7f558aae1d1f3d72206c16c1486049"
+}
 
 [deps]
 
-source_file="res://resources/Map/MAP060_16.png"
-dest_files=["res://.godot/imported/MAP060_16.png-871d13ca85173601dd36e46c0deffc34.s3tc.ctex"]
+source_file="res://resources/Map/Untitled_MAP060_1.png"
+dest_files=["res://.godot/imported/Untitled_MAP060_1.png-5259f37144af6a953441afe8755c042f.s3tc.ctex"]
 
 [params]
 

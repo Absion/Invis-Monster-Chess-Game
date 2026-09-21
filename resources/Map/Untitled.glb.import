@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://cgsy661aloy7d"
-path="res://.godot/imported/MAP060.gltf-421e44e042b5be5580c60eb0cbb9e2d2.scn"
+uid="uid://w8bf8vc1v6dd"
+path="res://.godot/imported/Untitled.glb-9f112dff49030d02d58196264ab8a269.scn"
 
 [deps]
 
-source_file="res://resources/Map/MAP060.gltf"
-dest_files=["res://.godot/imported/MAP060.gltf-421e44e042b5be5580c60eb0cbb9e2d2.scn"]
+source_file="res://resources/Map/Untitled.glb"
+dest_files=["res://.godot/imported/Untitled.glb-9f112dff49030d02d58196264ab8a269.scn"]
 
 [params]
 
