@@ -71,3 +71,5 @@
 ## 2024-07-29 - Pre-calculating Fixed Array Structures
 **Learning:** Dynamically calculating and allocating arrays for fixed, unchanging structures (like relative grid coordinate offsets for an AOE attack) inside a method at runtime adds unnecessary CPU overhead and triggers garbage collection each time the method is executed.
 **Action:** Identify arrays or data structures whose contents are known and constant. Pre-calculate these values and store them as a `const` class-level variable, and iterate over that constant instead to avoid runtime allocations.
+**Learning:** In Godot, the `Viewport` class already caches its active 3D camera internally. Manually caching `get_viewport().get_camera_3d()` provides zero performance benefit. It is an O(1) getter. In fact, caching it manually can introduce state bugs if the active camera changes.
+**Action:** Do not manually cache `get_viewport().get_camera_3d()`. Use `get_viewport().get_camera_3d()` directly.
