@@ -47,6 +47,12 @@ func _setup_astar() -> void:
 	astar.cell_size = Vector2(CELL_SIZE, CELL_SIZE)
 	# Manhattan distance matches standard grid movement without diagonals (like a chess rook)
 	astar.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
+
+	# ⚡ Bolt Optimization: Set heuristic to Manhattan to match DIAGONAL_MODE_NEVER.
+	# This prevents A* from incorrectly expanding orthogonal nodes based on Euclidean distance, saving CPU cycles.
+	astar.default_compute_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+	astar.default_estimate_heuristic = AStarGrid2D.HEURISTIC_MANHATTAN
+
 	astar.update()
 
 ## Called after moving actors or changing grid state to refresh pathfinding obstacles.
