@@ -34,14 +34,14 @@ func _process_monsters() -> void:
 	for pos in grid_manager.grid:
 		var actor = grid_manager.grid[pos]
 		# Categorize actors into monsters array or identify the target girl
-		if "Monster" in actor.name:
+		if actor.is_monster():
 			monsters.append(actor)
 		elif actor.get_actor_name() == "Little Girl":
 			girl = actor
 			
 	for pos in grid_manager.stacked_actors:
 		var actor = grid_manager.stacked_actors[pos]
-		if "Monster" in actor.name:
+		if actor.is_monster():
 			monsters.append(actor)
 		elif actor.get_actor_name() == "Little Girl":
 			girl = actor
@@ -115,3 +115,21 @@ func _process_single_monster(monster: Actor, target: Actor) -> void:
 	if distance == 1:
 		if Global.has_method("play_monster_attack"): Global.play_monster_attack()
 		target.take_damage(monster.data.damage)
+		
+		# Vengeful Thorns: Counter-attack if target has retribution spikes
+		if target.has_meta("has_retribution_spikes") and target.get_meta("has_retribution_spikes") == true:
+			if is_instance_valid(monster) and monster.current_health > 0:
+				print("RETRIBUTION! Monster takes 5 counter-damage.")
+				monster.take_damage(5)
+				if Global.has_method("play_monster_wounded"): Global.play_monster_wounded()
+				
+				# Push monster 1 tile away from the girl
+				if is_instance_valid(monster) and monster.current_health > 0:
+					var push_dir = Vector2i(sign(monster.grid_x - target.grid_x), sign(monster.grid_z - target.grid_z))
+					if push_dir == Vector2i.ZERO:
+						push_dir = Vector2i(0, 1)
+					var kx = monster.grid_x + push_dir.x
+					var kz = monster.grid_z + push_dir.y
+					if grid_manager.is_cell_walkable(kx, kz):
+						await grid_manager.move_actor(monster, kx, kz)
+

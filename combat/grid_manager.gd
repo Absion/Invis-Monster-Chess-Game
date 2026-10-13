@@ -122,6 +122,25 @@ func remove_actor(actor: Actor) -> void:
 		grid.erase(pos)
 		# ⚡ Bolt Optimization: Use O(1) incremental AStar update instead of O(N) full grid rebuild
 		astar.set_point_solid(pos, false)
+	if stacked_actors.has(pos) and stacked_actors[pos] == actor:
+		stacked_actors.erase(pos)
+
+## Clears all monster actors from the grid and resets solid obstacles.
+func clear_all_monsters() -> void:
+	var to_remove: Array[Actor] = []
+	for pos in grid:
+		var actor = grid[pos]
+		if is_instance_valid(actor) and actor.is_monster():
+			to_remove.append(actor)
+	for pos in stacked_actors:
+		var actor = stacked_actors[pos]
+		if is_instance_valid(actor) and actor.is_monster():
+			to_remove.append(actor)
+	for actor in to_remove:
+		remove_actor(actor)
+	update_obstacles()
+
+
 
 ## Attempts to move an actor from its current cell to a new cell.
 ## This is an asynchronous coroutine. You should `await` it so the game logic pauses while the actor slides.

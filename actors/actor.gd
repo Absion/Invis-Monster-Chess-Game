@@ -27,13 +27,19 @@ var axe_left_ap: AnimationPlayer
 ## Current health pool of the actor.
 var current_health: int = 0
 
+## Roguelite modifiers
+var movement_range_bonus: int = 0
+var damage_bonus: int = 0
+var max_health_bonus: int = 0
+var has_shield: bool = false
+
 ## Initializes the actor's health based on its resource data.
 func _ready() -> void:
 	# Ensure data is provided before setting up health
 	if data == null:
 		push_warning("Actor initialized without ActorData resource: " + name)
 	else:
-		current_health = data.max_health
+		current_health = get_max_health()
 		
 ## Called by [GridManager] to initialize the actor's logical coordinates.
 ##
@@ -57,6 +63,11 @@ func move_to(target_pos: Vector3) -> Tween:
 ##
 ## [param amount]: The amount of damage to subtract from [member current_health].
 func take_damage(amount: int) -> void:
+	if has_shield:
+		has_shield = false
+		_play_shield_blocked_feedback()
+		return
+
 	current_health -= amount
 	print(get_actor_name(), " takes ", amount, " damage! Remaining HP: ", current_health)
 	
@@ -65,6 +76,32 @@ func take_damage(amount: int) -> void:
 	# Trigger death logic if health drops below or equals zero
 	if current_health <= 0:
 		die()
+
+## Plays a radiant barrier break effect when an attack is fully negated.
+func _play_shield_blocked_feedback() -> void:
+	var label = Label3D.new()
+	label.pixel_size = 0.05
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.outline_render_priority = 2
+	label.font_size = 140
+	label.text = "🛡️ BLOCKED!"
+	label.modulate = Color(0.3, 0.85, 1.0)
+	add_child(label)
+	label.position.y = 2.8
+	
+	var tween = get_tree().create_tween()
+	tween.tween_property(label, "position:y", 3.8, 0.6)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.6)
+	tween.tween_callback(label.queue_free)
+	
+	if is_instance_valid(model):
+		var orig_mat = model.material_override as StandardMaterial3D
+		if orig_mat:
+			var orig_col = orig_mat.albedo_color
+			orig_mat.albedo_color = Color(0.4, 0.9, 1.0)
+			var t = create_tween()
+			t.tween_interval(0.25)
+			t.tween_callback(func(): if is_instance_valid(model) and orig_mat: orig_mat.albedo_color = orig_col)
 
 ## Spawns a floating damage text ('O' for monsters, 'X' for girl) and shakes the screen
 func _play_hit_feedback() -> void:
@@ -122,8 +159,21 @@ func die() -> void:
 	
 ## Helper to safely retrieve the movement range from the resource.
 func get_movement_range() -> int:
-	return data.movement_range if data else 0
+	return (data.movement_range if data else 0) + movement_range_bonus
+
+## Helper to safely retrieve attack damage with bonuses.
+func get_damage() -> int:
+	return (data.damage if data else 0) + damage_bonus
+
+## Helper to safely retrieve max health with bonuses.
+func get_max_health() -> int:
+	return (data.max_health if data else 10) + max_health_bonus
 
 ## Helper to safely retrieve the actor's name from the resource.
 func get_actor_name() -> String:
 	return data.name if data else String(name)
+
+## Helper to identify if this actor belongs to the hostile monster faction.
+func is_monster() -> bool:
+	return is_in_group("monsters") or (data != null and data.name == "Monster") or "Monster" in name or "Fiend" in name or "Stalker" in name
+
