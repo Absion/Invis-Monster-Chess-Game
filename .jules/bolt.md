@@ -73,3 +73,6 @@
 **Action:** Identify arrays or data structures whose contents are known and constant. Pre-calculate these values and store them as a `const` class-level variable, and iterate over that constant instead to avoid runtime allocations.
 **Learning:** In Godot, the `Viewport` class already caches its active 3D camera internally. Manually caching `get_viewport().get_camera_3d()` provides zero performance benefit. It is an O(1) getter. In fact, caching it manually can introduce state bugs if the active camera changes.
 **Action:** Do not manually cache `get_viewport().get_camera_3d()`. Use `get_viewport().get_camera_3d()` directly.
+## 2026-06-27 - AStarGrid2D Heuristic Mismatch
+**Learning:** By default, `AStarGrid2D` uses Euclidean distance for its heuristics (`default_compute_heuristic` and `default_estimate_heuristic`). If the grid uses `DIAGONAL_MODE_NEVER` (Manhattan geometry like a chess rook), using the default Euclidean heuristic causes the A* algorithm to expand more nodes than necessary because the heuristic underestimates the actual cost of the path.
+**Action:** Always ensure the A* heuristics match the grid's movement rules. When `diagonal_mode` is `DIAGONAL_MODE_NEVER`, set `default_compute_heuristic` and `default_estimate_heuristic` to `AStarGrid2D.HEURISTIC_MANHATTAN` to optimize pathfinding performance and prevent unnecessary node expansion.
